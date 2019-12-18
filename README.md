@@ -28,5 +28,8 @@ void limooDriverTest() {
 			}
 		}
 	});
+	
+	// When you're done with the driver:
+	ld.close();
 }
 ```
