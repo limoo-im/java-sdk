@@ -11,25 +11,31 @@ org.atmosphere:wasync:1.4.3
 
 ### Example usage
 ```java
-void limooDriverTest() {
-	LimooDriver ld = new LimooDriver("https://beta.limonadapp.ir/Limonad", "test", "test_bot_username", "test_bot_password");
-	Conversation c = ld.getConversationById("conversationExtuid");
-	List<Message> unreadMessages = c.getUnreadMessages();
-	ld.registerEventListener(new MessageCreatedEventListener(c) {
-		@Override
-		public void onNewMessage(Message msg) {
-			System.out.println(msg.getText());
-			if (msg.getThreadRootId() == null) {
-				try {
-					Message response = c.sendInThread("Message received", msg.getId());
-				} catch (LimooException e) {
-					e.printStackTrace();
-				}
-			}
+// Create a new LimooDriver instance by limoo server, workspace key, bot username and bot password
+LimooDriver ld = new LimooDriver("https://beta.limonadapp.ir/Limonad", "test", "test_bot_username", "test_bot_password");
+
+// Get a conversation by its id
+Conversation c = ld.getConversationById("conversationExtuid");
+
+// Get a list of new message in the conversation (messages which have not been viewed by the bot)
+List<Message> unreadMessages = c.getUnreadMessages();
+
+// Send a message in the conversation
+c.send("Hi everyone!");
+
+// Register a new MessageCreatedEventListener which notifies you whenever a new message is sent in the conversation
+ld.registerEventListener(new MessageCreatedEventListener(c) {
+	@Override
+	public void onNewMessage(Message msg) {
+		System.out.println(msg.getText());
+
+	    // Send a message in the thread of the new message (msg can be root of a thread only if its threadRootId is null)
+		if (msg.getThreadRootId() == null) {
+			Message response = c.sendInThread("Message received", msg.getId());
 		}
-	});
-	
-	// When you're done with the driver:
-	ld.close();
-}
+	}
+});
+
+// When you're done with the driver:
+ld.close();
 ```
