@@ -1,4 +1,4 @@
-package ir.limoo.driver.entity.event_listener;
+package ir.limoo.driver.event_listener;
 
 import ir.limoo.driver.entity.Conversation;
 import ir.limoo.driver.entity.Message;
@@ -30,5 +30,6 @@ public abstract class MessageCreatedEventListener implements EventListener {
 	public void onNewEvent(Event event) {
 		MessageCreatedEvent messageCreatedEvent = (MessageCreatedEvent) event;
 		onNewMessage(messageCreatedEvent.getMessage());
+		conversation.onNewMessage(messageCreatedEvent.getMessage());
 	}
 }

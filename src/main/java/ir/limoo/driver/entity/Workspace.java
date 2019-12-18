@@ -1,9 +1,9 @@
 package ir.limoo.driver.entity;
 
+import java.io.IOException;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import ir.limoo.driver.connection.LimooRequester;
@@ -23,9 +23,12 @@ public class Workspace {
 
 	private LimooRequester requester;
 
-//	private static final String GET_USER_CONVERSATIONS_URI_TEMPLATE = "workspace/items/%s/conversation/items";
 	private static final String GET_CONVERSATION_URI_TEMPLATE = "workspace/items/%s/conversation/items/%s";
 	private static final String GET_MY_WORKSPACES_URI_TEMPLATE = "user/my_workspaces";
+
+	public Workspace() {
+
+	}
 
 	public Workspace(String key, LimooRequester requester) throws LimooException {
 		this.key = key;
@@ -54,7 +57,7 @@ public class Workspace {
 	}
 
 	private void getAndInitWorkspace() throws LimooException {
-		JsonNode myWorkspacesNode = requester.executeApiGet(GET_MY_WORKSPACES_URI_TEMPLATE, worker);
+		JsonNode myWorkspacesNode = requester.executeApiGet(GET_MY_WORKSPACES_URI_TEMPLATE, null);
 		List<Workspace> myWorkspaces = JacksonUtils.deserilizeObjectToList(myWorkspacesNode, Workspace.class);
 		if (myWorkspaces != null) {
 			boolean found = false;
@@ -78,9 +81,10 @@ public class Workspace {
 		String uri = String.format(GET_CONVERSATION_URI_TEMPLATE, getId(), conversatinoId);
 		JsonNode conversationsNode = requester.executeApiGet(uri, worker);
 		try {
-			Conversation conversation = JacksonUtils.deserilizeObject(conversationsNode, Conversation.class);
+			Conversation conversation = new Conversation(conversatinoId, this, requester);
+			JacksonUtils.deserilizeIntoObject(conversationsNode, conversation);
 			return conversation;
-		} catch (JsonProcessingException e) {
+		} catch (IOException e) {
 			throw new LimooException(e);
 		}
 	}

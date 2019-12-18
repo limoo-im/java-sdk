@@ -54,6 +54,10 @@ public class JacksonUtils {
 		return getForgivingObjectMapper().treeToValue(jsonNode, clazz);
 	}
 
+	public static void deserilizeIntoObject(JsonNode jsonNode, Object obj) throws IOException {
+		getForgivingObjectMapper().readerForUpdating(obj).readValue(jsonNode);
+	}
+
 	@SuppressWarnings("unchecked")
 	public static <T> List<T> deserilizeObjectToList(JsonNode jsonNode, Class<T> clazz) {
 		List<T> output = new ArrayList<>();
@@ -68,6 +72,7 @@ public class JacksonUtils {
 			}
 			return output;
 		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
 			return null;
 		}
 	}

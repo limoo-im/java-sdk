@@ -4,6 +4,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -22,6 +24,8 @@ import okhttp3.Response;
 
 public class LimooRequester implements Closeable {
 
+	private static final transient org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(LimooRequester.class);
+
 	private static final String LOGIN_URI = "j_spring_security_check";
 	private static final String REFRESH_TOKEN_URI = "j_spring_jwt_security_check";
 	private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
@@ -32,6 +36,8 @@ public class LimooRequester implements Closeable {
 	private User user;
 
 	public LimooRequester(String limooUrl, User user) {
+		Logger.getLogger(OkHttpClient.class.getName()).setLevel(Level.FINE);
+		this.limooUrl = limooUrl;
 		this.user = user;
 		CookieManager cookieManager = new CookieManager();
 		cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
@@ -50,14 +56,15 @@ public class LimooRequester implements Closeable {
 				return false;
 			}
 		} catch (IOException e) {
-			// TODO log
+			logger.error(e);
 			return false;
 		}
 		return true;
 	}
 
 	public String getAccessToken() throws LimooAuthenticationException, LimooException {
-		Request request = new Request.Builder().url(createFullUrl(REFRESH_TOKEN_URI, null)).method("POST", null).build();
+		RequestBody body = RequestBody.create(JSON, "");
+		Request request = new Request.Builder().url(createFullUrl(REFRESH_TOKEN_URI, null)).method("POST", body).build();
 		try (Response response = executeRequest(request)) {
 			return response.header("Token");
 		} catch (LimooAuthenticationException e) {
@@ -103,9 +110,11 @@ public class LimooRequester implements Closeable {
 		try {
 			Response response = httpClient.newCall(request).execute();
 			if (response.code() == 401) {
+				response.close();
 				throw new LimooAuthenticationException();
 			} else if (!response.isSuccessful()) {
-				throw new LimooException(); // TODO Add message
+				response.close();
+				throw new LimooException("Request returned unsuccessfully with status " + response.code());
 			}
 			return response;
 		} catch (IOException e) {
@@ -114,7 +123,8 @@ public class LimooRequester implements Closeable {
 	}
 
 	private String createApiUrl(String relativeUrl, WorkerNode worker) {
-		return createFullUrl(concatenateUris("api/v1", relativeUrl), worker);
+		String apiPrefix = worker == null ? "api/v1" : "v1";
+		return createFullUrl(concatenateUris(apiPrefix, relativeUrl), worker);
 	}
 
 	private String createFullUrl(String relativeUrl, WorkerNode worker) {

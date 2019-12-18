@@ -9,6 +9,7 @@
 plugins {
     // Apply the java-library plugin to add support for Java Library
     id 'java-library'
+    id 'application'
 }
 
 repositories {
@@ -19,8 +20,8 @@ repositories {
 
 dependencies {
 	// OkHttp client
-	compile 'com.squareup.okhttp3:okhttp:3.10.0'
-	compile "com.squareup.okhttp3:okhttp-urlconnection:3.10.0"
+	compile 'com.squareup.okhttp3:okhttp:3.14.4'
+	compile "com.squareup.okhttp3:okhttp-urlconnection:3.14.4"
 
 	// Jackson
 	compile 'com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.2.3'
@@ -28,6 +29,7 @@ dependencies {
 
 	// log4j
 	compile 'log4j:log4j:1.2.16'
+	compile 'org.slf4j:slf4j-log4j12:1.6.1'
 
 	// Atmosphere
 	compile 'org.atmosphere:wasync:1.4.3'
@@ -39,6 +41,7 @@ dependencies {
 jar  {
     baseName = 'limoo-java-driver'
     version = "${specVersion}"
+    // applicationDefaultJvmArgs = ["-g:vars"]
 
     def revision = 'git rev-parse HEAD'.execute().text.trim()
     def date = new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")

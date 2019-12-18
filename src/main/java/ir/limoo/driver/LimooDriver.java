@@ -7,8 +7,8 @@ import ir.limoo.driver.connection.LimooWebsocketEndpoint;
 import ir.limoo.driver.entity.Conversation;
 import ir.limoo.driver.entity.User;
 import ir.limoo.driver.entity.Workspace;
-import ir.limoo.driver.entity.event_listener.EventListener;
-import ir.limoo.driver.entity.event_listener.EventListenerManager;
+import ir.limoo.driver.event_listener.EventListener;
+import ir.limoo.driver.event_listener.EventListenerManager;
 import ir.limoo.driver.exception.LimooException;
 
 public class LimooDriver implements Closeable {
@@ -19,6 +19,13 @@ public class LimooDriver implements Closeable {
 	private EventListenerManager eventListenerManager;
 	private LimooWebsocketEndpoint websocketEndpoint;
 
+	/**
+	 * @param limooUrl
+	 * @param workspaceKey
+	 * @param botUsername
+	 * @param botPassword
+	 * @throws LimooException
+	 */
 	public LimooDriver(String limooUrl, String workspaceKey, String botUsername, String botPassword)
 			throws LimooException {
 		try {
@@ -47,7 +54,9 @@ public class LimooDriver implements Closeable {
 
 	@Override
 	public void close() {
-		limooRequester.close();
-		websocketEndpoint.close();
+		if (limooRequester != null)
+			limooRequester.close();
+		if (websocketEndpoint != null)
+			websocketEndpoint.close();
 	}
 }

@@ -6,6 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Message {
 
+	@JsonProperty("id")
+	private String id;
+
 	@JsonProperty("text")
 	private String text;
 
@@ -17,6 +20,17 @@ public class Message {
 	
 	@JsonProperty("conversation_id")
 	private String conversationId;
+
+	@JsonProperty("thread_root_id")
+	private String threadRootId;
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
 
 	public String getText() {
 		return text;
@@ -48,5 +62,13 @@ public class Message {
 
 	public void setConversationId(String conversationId) {
 		this.conversationId = conversationId;
+	}
+
+	public String getThreadRootId() {
+		return threadRootId;
+	}
+
+	public void setThreadRootId(String threadRootId) {
+		this.threadRootId = threadRootId;
 	}
 }

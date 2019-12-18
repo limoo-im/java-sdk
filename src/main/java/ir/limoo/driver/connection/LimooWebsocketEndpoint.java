@@ -19,8 +19,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import ir.limoo.driver.entity.WorkerNode;
-import ir.limoo.driver.entity.event_listener.EventListenerManager;
 import ir.limoo.driver.event.MessageCreatedEvent;
+import ir.limoo.driver.event_listener.EventListenerManager;
 import ir.limoo.driver.exception.LimooAuthenticationException;
 import ir.limoo.driver.exception.LimooException;
 import ir.limoo.driver.util.JacksonUtils;
@@ -37,6 +37,7 @@ public class LimooWebsocketEndpoint implements Closeable {
 
 	private Socket socket;
 
+	@SuppressWarnings("rawtypes")
 	private RequestBuilder requestBuilder;
 
 	public LimooWebsocketEndpoint(WorkerNode worker, EventListenerManager eventListenerManager,
@@ -47,6 +48,7 @@ public class LimooWebsocketEndpoint implements Closeable {
 		this.connect(true);
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void createSocket(WorkerNode worker) {
 		Client client = ClientFactory.getDefault().newClient();
 
@@ -65,8 +67,7 @@ public class LimooWebsocketEndpoint implements Closeable {
 						try {
 							return JacksonUtils.convertStringToJsonNode(s);
 						} catch (IOException e1) {
-							logger.error(e1);
-							return null;
+							return JacksonUtils.createEmptyObjectNode();
 						}
 					}
 				}).transport(Request.TRANSPORT.WEBSOCKET);
