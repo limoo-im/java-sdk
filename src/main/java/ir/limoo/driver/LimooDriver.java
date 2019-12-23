@@ -33,8 +33,7 @@ public class LimooDriver implements Closeable {
 			this.limooRequester = new LimooRequester(limooUrl, user);
 			this.workspace = new Workspace(workspaceKey, limooRequester);
 			this.eventListenerManager = new EventListenerManager();
-			this.websocketEndpoint = new LimooWebsocketEndpoint(workspace.getWorker(), eventListenerManager,
-					limooRequester);
+			this.websocketEndpoint = new LimooWebsocketEndpoint(workspace, eventListenerManager);
 		} catch (LimooException e) {
 			this.close();
 			throw e;

@@ -1,9 +1,12 @@
 package ir.limoo.driver.connection;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.nio.file.Files;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,8 +18,10 @@ import ir.limoo.driver.exception.LimooAuthenticationException;
 import ir.limoo.driver.exception.LimooException;
 import ir.limoo.driver.util.JacksonUtils;
 import okhttp3.FormBody;
+import okhttp3.HttpUrl;
 import okhttp3.JavaNetCookieJar;
 import okhttp3.MediaType;
+import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -24,7 +29,8 @@ import okhttp3.Response;
 
 public class LimooRequester implements Closeable {
 
-	private static final transient org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(LimooRequester.class);
+	private static final transient org.apache.log4j.Logger logger = org.apache.log4j.Logger
+			.getLogger(LimooRequester.class);
 
 	private static final String LOGIN_URI = "j_spring_security_check";
 	private static final String REFRESH_TOKEN_URI = "j_spring_jwt_security_check";
@@ -64,7 +70,8 @@ public class LimooRequester implements Closeable {
 
 	public String getAccessToken() throws LimooAuthenticationException, LimooException {
 		RequestBody body = RequestBody.create(JSON, "");
-		Request request = new Request.Builder().url(createFullUrl(REFRESH_TOKEN_URI, null)).method("POST", body).build();
+		Request request = new Request.Builder().url(createFullUrl(REFRESH_TOKEN_URI, null)).method("POST", body)
+				.build();
 		try (Response response = executeRequest(request)) {
 			return response.header("Token");
 		} catch (LimooAuthenticationException e) {
@@ -72,6 +79,40 @@ public class LimooRequester implements Closeable {
 			try (Response response = executeRequest(request)) {
 				return response.header("Token");
 			}
+		}
+	}
+
+	public JsonNode uploadFile(File file, WorkerNode worker) throws LimooException {
+		String contentType;
+		try {
+			contentType = Files.probeContentType(file.toPath());
+		} catch (IOException e) {
+			throw new LimooException(e);
+		}
+		MediaType mediaType = MediaType.parse(contentType);
+		RequestBody body = new MultipartBody.Builder().setType(MultipartBody.FORM)
+				.addFormDataPart(file.getName(), file.getName(), RequestBody.create(mediaType, file)).build();
+		Request request = new Request.Builder().url(getFileOperationUrl(worker)).post(body).build();
+		try {
+			return executeRequestAndGetBody(request);
+		} catch (LimooAuthenticationException e) {
+			login();
+			return executeRequestAndGetBody(request);
+		}
+	}
+
+	public InputStream downloadFile(String hashCode, String fileName, WorkerNode worker) throws LimooException {
+		HttpUrl.Builder urlBuilder = HttpUrl.parse(getFileOperationUrl(worker)).newBuilder();
+		urlBuilder.addQueryParameter("hash", hashCode).addQueryParameter("file_name", fileName)
+				.addQueryParameter("mode", "download");
+		Request request = new Request.Builder().url(urlBuilder.build()).build();
+		try {
+			Response response = executeRequest(request);
+			return response.body().byteStream();
+		} catch (LimooAuthenticationException e) {
+			login();
+			Response response = executeRequest(request);
+			return response.body().byteStream();
 		}
 	}
 
@@ -114,12 +155,17 @@ public class LimooRequester implements Closeable {
 				throw new LimooAuthenticationException();
 			} else if (!response.isSuccessful()) {
 				response.close();
-				throw new LimooException("Request returned unsuccessfully with status " + response.code());
+				throw new LimooException("Request returned unsuccessfully with status " + response.code()
+						+ " and message: " + response.message());
 			}
 			return response;
 		} catch (IOException e) {
 			throw new LimooException(e);
 		}
+	}
+
+	private String getFileOperationUrl(WorkerNode worker) {
+		return concatenateUris(worker.getFileUrl(), "v1/files");
 	}
 
 	private String createApiUrl(String relativeUrl, WorkerNode worker) {

@@ -87,4 +87,10 @@ public class JacksonUtils {
 			throw new RuntimeException(e);
 		}
 	}
+
+	public static JsonNode serializeObjectAsJsonNode(Object obj) {
+		if (obj == null)
+			return null;
+		return getObjectMapper().valueToTree(obj);
+	}
 }

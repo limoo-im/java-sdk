@@ -15,10 +15,10 @@ import org.atmosphere.wasync.Request;
 import org.atmosphere.wasync.RequestBuilder;
 import org.atmosphere.wasync.Socket;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import ir.limoo.driver.entity.WorkerNode;
+import ir.limoo.driver.entity.Workspace;
 import ir.limoo.driver.event.MessageCreatedEvent;
 import ir.limoo.driver.event_listener.EventListenerManager;
 import ir.limoo.driver.exception.LimooAuthenticationException;
@@ -34,17 +34,18 @@ public class LimooWebsocketEndpoint implements Closeable {
 
 	private EventListenerManager eventListenerManager;
 	private LimooRequester limooRequester;
+	private Workspace workspace;
 
 	private Socket socket;
 
 	@SuppressWarnings("rawtypes")
 	private RequestBuilder requestBuilder;
 
-	public LimooWebsocketEndpoint(WorkerNode worker, EventListenerManager eventListenerManager,
-			LimooRequester limooRequester) throws LimooAuthenticationException, LimooException {
+	public LimooWebsocketEndpoint(Workspace workspace, EventListenerManager eventListenerManager) throws LimooAuthenticationException, LimooException {
+		this.workspace = workspace;
 		this.eventListenerManager = eventListenerManager;
-		this.limooRequester = limooRequester;
-		this.createSocket(worker);
+		this.limooRequester = workspace.getRequester();
+		this.createSocket(workspace.getWorker());
 		this.connect(true);
 	}
 
@@ -137,8 +138,8 @@ public class LimooWebsocketEndpoint implements Closeable {
 			socket.close();
 		} else if (MESSAGE_CREATED_EVENT.equals(event)) {
 			try {
-				eventListenerManager.newEvent(new MessageCreatedEvent(eventNode.get("data")));
-			} catch (JsonProcessingException e) {
+				eventListenerManager.newEvent(new MessageCreatedEvent(workspace, eventNode.get("data")));
+			} catch (IOException e) {
 				logger.error("", e);
 			}
 		}

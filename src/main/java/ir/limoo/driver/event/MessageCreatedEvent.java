@@ -1,18 +1,21 @@
 package ir.limoo.driver.event;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 import ir.limoo.driver.entity.Message;
+import ir.limoo.driver.entity.Workspace;
 import ir.limoo.driver.util.JacksonUtils;
 
 public class MessageCreatedEvent implements Event {
 
 	private Message message;
 
-	public MessageCreatedEvent(JsonNode dataNode) throws JsonProcessingException {
+	public MessageCreatedEvent(Workspace workspace, JsonNode dataNode) throws IOException {
 		JsonNode msgNode = dataNode.get("message");
-		Message msg = JacksonUtils.deserilizeObject(msgNode, Message.class);
+		Message msg = new Message(workspace);
+		JacksonUtils.deserilizeIntoObject(msgNode, msg);
 		this.message = msg;
 	}
 

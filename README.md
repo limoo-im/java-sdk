@@ -17,11 +17,14 @@ LimooDriver ld = new LimooDriver("https://beta.limonadapp.ir/Limonad", "test", "
 // Get a conversation by its id
 Conversation c = ld.getConversationById("conversationExtuid");
 
-// Get a list of new message in the conversation (messages which have not been viewed by the bot)
+// Get a list of new messages in the conversation (messages which have not been viewed by the bot)
 List<Message> unreadMessages = c.getUnreadMessages();
 
-// Send a message in the conversation
+// Send a simple message in the conversation
 c.send("Hi everyone!");
+
+// Send a message containing a file
+c.send(new Message.Builder().text("Here's a file!").file(new File("test.txt")));
 
 // Register a new MessageCreatedEventListener which notifies you whenever a new message is sent in the conversation
 ld.registerEventListener(new MessageCreatedEventListener(c) {
@@ -29,9 +32,18 @@ ld.registerEventListener(new MessageCreatedEventListener(c) {
 	public void onNewMessage(Message msg) {
 		System.out.println(msg.getText());
 
+		// Download attachments of the message
+		try (InputStream inputStream = messageFile.download()) {
+			System.out.println(inputStream.available());
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (LimooException e) {
+			e.printStackTrace();
+		}
+
 	    // Send a message in the thread of the new message (msg can be root of a thread only if its threadRootId is null)
 		if (msg.getThreadRootId() == null) {
-			Message response = c.sendInThread("Message received", msg.getId());
+			c.send(new Message.Builder().text("Message received").threadRootId(msg.getId()));
 		}
 	}
 });

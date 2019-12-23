@@ -1,5 +1,8 @@
 package ir.limoo.driver.entity;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -8,10 +11,12 @@ import org.apache.log4j.Logger;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ir.limoo.driver.connection.LimooRequester;
 import ir.limoo.driver.exception.LimooException;
+import ir.limoo.driver.exception.LimooFileUploadException;
 import ir.limoo.driver.util.JacksonUtils;
 
 public class Conversation {
@@ -38,10 +43,10 @@ public class Conversation {
 
 	}
 
-	public Conversation(String id, Workspace workspace, LimooRequester requester) {
+	public Conversation(String id, Workspace workspace) {
 		this.id = id;
 		this.workspace = workspace;
-		this.requester = requester;
+		this.requester = workspace.getRequester();
 	}
 
 	public String getId() {
@@ -68,6 +73,10 @@ public class Conversation {
 		this.totalMsgCount = totalMsgCount;
 	}
 
+	public Workspace getWorkspace() {
+		return this.workspace;
+	}
+
 	/**
 	 * 
 	 * @param message
@@ -75,21 +84,29 @@ public class Conversation {
 	 * @throws LimooException
 	 */
 	public Message send(String message) throws LimooException {
-		return sendInThread(message, null);
+		return send(new Message.Builder().text(message));
 	}
 
 	/**
-	 * 
-	 * @param message
-	 * @param threadRootId The id of the root message of the thread
+	 * @param Message builder
 	 * @return The created message
-	 * @throws LimooException
+	 * @throws LimooFileUploadException 
 	 */
-	public Message sendInThread(String message, String threadRootId) throws LimooException {
+	public Message send(Message.Builder builder) throws LimooFileUploadException, LimooException {
+		builder.workspace(workspace);
+		Message toBeCreated = builder.build();
+		// Upload files
+		for (File file : toBeCreated.getUploadableFiles()) {
+			try {
+				JsonNode uploadedNode = requester.uploadFile(file, workspace.getWorker());
+				MessageFile fileInfo = JacksonUtils.deserilizeObjectToList(uploadedNode, MessageFile.class).get(0);
+				toBeCreated.getCreatedFileInfos().add(fileInfo);
+			} catch (Exception e) {
+				throw new LimooFileUploadException(e);
+			}
+		}
 		String uri = String.format(SEND_MSG_URI_TEMPLATE, workspace.getId(), id);
-		ObjectNode bodyNode = JacksonUtils.createEmptyObjectNode().put("text", message);
-		if (threadRootId != null)
-			bodyNode.put("thread_root_id", threadRootId);
+		JsonNode bodyNode = JacksonUtils.serializeObjectAsJsonNode(toBeCreated);
 		JsonNode createdMsgNode = requester.executeApiPost(uri, bodyNode, workspace.getWorker());
 		try {
 			return JacksonUtils.deserilizeObject(createdMsgNode, Message.class);
@@ -97,11 +114,24 @@ public class Conversation {
 			throw new LimooException(e);
 		}
 	}
-	
+
 	public List<Message> getUnreadMessages() throws LimooException {
 		String uri = String.format(GET_MESSAGES_URI_TEMPLATE, workspace.getId(), id, membership.lastViewedAt.getTime());
-		JsonNode msgsNode = requester.executeApiGet(uri, workspace.getWorker());
-		List<Message> messages = JacksonUtils.deserilizeObjectToList(msgsNode, Message.class);
+		ArrayNode msgsNode = (ArrayNode) requester.executeApiGet(uri, workspace.getWorker());
+		List<Message> messages = new ArrayList<>();
+		for (JsonNode msgNode : msgsNode) {
+			Message message = new Message(workspace);
+			try {
+				JacksonUtils.deserilizeIntoObject(msgNode, message);
+				messages.add(message);
+			} catch (IOException e) {
+				throw new LimooException(e);
+			}
+		}
+//		List<Message> messages = JacksonUtils.deserilizeObjectToList(msgsNode, Message.class);
+//		for (Message message : messages) {
+//			message.setWorkspace(workspace);
+//		}
 		viewLog();
 		return messages;
 	}
