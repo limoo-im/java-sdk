@@ -33,12 +33,14 @@ ld.registerEventListener(new MessageCreatedEventListener(c) {
 		System.out.println(msg.getText());
 
 		// Download attachments of the message
-		try (InputStream inputStream = messageFile.download()) {
-			System.out.println(inputStream.available());
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (LimooException e) {
-			e.printStackTrace();
+		for (MessageFile messageFile : msg.getFiles()) {
+			try (InputStream inputStream = messageFile.download()) {
+				System.out.println(inputStream.available());
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (LimooException e) {
+				e.printStackTrace();
+			}
 		}
 
 	    // Send a message in the thread of the new message (msg can be root of a thread only if its threadRootId is null)
