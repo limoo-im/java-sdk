@@ -1,4 +1,9 @@
-# limoo-java-driver
+# Limoo java SDK
+A Java SDK for Limoo.  
+  
+*Wondering what Limoo is? Visit https://limoo.im*  
+  
+*Give Limoo a try: https://web.limoo.im*
 
 ### Dependencies
 com.squareup.okhttp3:okhttp:3.14.4  
