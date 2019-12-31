@@ -1,4 +1,4 @@
-# limonad-java-driver
+# limoo-java-driver
 
 ### Dependencies
 com.squareup.okhttp3:okhttp:3.14.4  
