@@ -48,7 +48,7 @@ ld.registerEventListener(new MessageCreatedEventListener(c) {
 			}
 		}
 
-	    // Send a message in the thread of the new message (msg can be root of a thread only if its threadRootId is null)
+		// Send a message in the thread of the new message (msg can be root of a thread only if its threadRootId is null)
 		if (msg.getThreadRootId() == null) {
 			c.send(new Message.Builder().text("Message received").threadRootId(msg.getId()));
 		}
@@ -58,3 +58,16 @@ ld.registerEventListener(new MessageCreatedEventListener(c) {
 // When you're done with the driver:
 ld.close();
 ```
+
+### Bot creation
+In order to create a bot, send the following command in your direct conversation with Limoo Bot:
+
+<div dir="rtl">
+
+```
+/ساخت-بات my_bot bot_nickname
+```
+
+</div>
+
+Note that only admins of the workspace can create bots.
