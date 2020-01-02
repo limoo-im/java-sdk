@@ -17,7 +17,7 @@ org.atmosphere:wasync:1.4.3
 ### Example usage
 ```java
 // Create a new LimooDriver instance by limoo server, workspace key, bot username and bot password
-LimooDriver ld = new LimooDriver("https://web.limoo.im", "test", "test_bot_username", "test_bot_password");
+LimooDriver ld = new LimooDriver("https://web.limoo.im/Limonad", "test", "test_bot_username", "test_bot_password");
 
 // Get a conversation by its id
 Conversation c = ld.getConversationById("conversationExtuid");
