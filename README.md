@@ -38,13 +38,15 @@ ld.registerEventListener(new MessageCreatedEventListener(c) {
 		System.out.println(msg.getText());
 
 		// Download attachments of the message
-		for (MessageFile messageFile : msg.getFiles()) {
-			try (InputStream inputStream = messageFile.download()) {
-				System.out.println(inputStream.available());
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (LimooException e) {
-				e.printStackTrace();
+		if (msg.getFiles() != null) {
+			for (MessageFile messageFile : msg.getFiles()) {
+				try (InputStream inputStream = messageFile.download()) {
+					System.out.println(inputStream.available());
+				} catch (IOException e) {
+					e.printStackTrace();
+				} catch (LimooException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 
