@@ -90,19 +90,21 @@ public class Conversation {
 	/**
 	 * @param Message builder
 	 * @return The created message
-	 * @throws LimooFileUploadException 
+	 * @throws LimooFileUploadException
 	 */
 	public Message send(Message.Builder builder) throws LimooFileUploadException, LimooException {
 		builder.workspace(workspace);
 		Message toBeCreated = builder.build();
 		// Upload files
-		for (File file : toBeCreated.getUploadableFiles()) {
-			try {
-				JsonNode uploadedNode = requester.uploadFile(file, workspace.getWorker());
-				MessageFile fileInfo = JacksonUtils.deserilizeObjectToList(uploadedNode, MessageFile.class).get(0);
-				toBeCreated.getCreatedFileInfos().add(fileInfo);
-			} catch (Exception e) {
-				throw new LimooFileUploadException(e);
+		if (toBeCreated.getUploadableFiles() != null) {
+			for (File file : toBeCreated.getUploadableFiles()) {
+				try {
+					JsonNode uploadedNode = requester.uploadFile(file, workspace.getWorker());
+					MessageFile fileInfo = JacksonUtils.deserilizeObjectToList(uploadedNode, MessageFile.class).get(0);
+					toBeCreated.getCreatedFileInfos().add(fileInfo);
+				} catch (Exception e) {
+					throw new LimooFileUploadException(e);
+				}
 			}
 		}
 		String uri = String.format(SEND_MSG_URI_TEMPLATE, workspace.getId(), id);
@@ -149,7 +151,7 @@ public class Conversation {
 		String uri = String.format(VIEW_CONVERSATION_URI_TEMPLATE, workspace.getId(), id);
 		ObjectNode bodyNode = JacksonUtils.createEmptyObjectNode().put("prev_conversation_id", id);
 		requester.executeApiPost(uri, bodyNode, workspace.getWorker());
-		membership.manualView(); // TODO lastViewedAt should be updated using view_log response 
+		membership.manualView(); // TODO lastViewedAt should be updated using view_log response
 	}
 
 	public class Membership {
