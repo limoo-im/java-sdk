@@ -1,6 +1,7 @@
 package ir.limoo.driver;
 
 import java.io.Closeable;
+import java.util.List;
 
 import ir.limoo.driver.connection.LimooRequester;
 import ir.limoo.driver.connection.LimooWebsocketEndpoint;
@@ -45,6 +46,10 @@ public class LimooDriver implements Closeable {
 
 	public Conversation getConversationById(String conversationId) throws LimooException {
 		return workspace.getConversationById(conversationId);
+	}
+	
+	public List<Conversation> getConversations() throws LimooException {
+		return workspace.getConversations();
 	}
 
 	public void registerEventListener(EventListener eventListener) {

@@ -1,12 +1,14 @@
 package ir.limoo.driver.entity;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import ir.limoo.driver.connection.LimooRequester;
 import ir.limoo.driver.exception.LimooException;
@@ -27,6 +29,7 @@ public class Workspace {
 	
 	private Map<String, Conversation> conversations;
 
+	private static final String GET_CONVERSATIONS_URI_TEMPLATE = "workspace/items/%s/conversation/items";
 	private static final String GET_CONVERSATION_URI_TEMPLATE = "workspace/items/%s/conversation/items/%s";
 	private static final String GET_MY_WORKSPACES_URI_TEMPLATE = "user/my_workspaces";
 
@@ -86,18 +89,35 @@ public class Workspace {
 		}
 	}
 
-	public Conversation getConversationById(String conversatinoId) throws LimooException {
-		if (conversations.containsKey(conversatinoId))
-			return conversations.get(conversatinoId);
-		String uri = String.format(GET_CONVERSATION_URI_TEMPLATE, getId(), conversatinoId);
-		JsonNode conversationsNode = requester.executeApiGet(uri, worker);
+	public Conversation getConversationById(String conversationId) throws LimooException {
+		if (conversations.containsKey(conversationId))
+			return conversations.get(conversationId);
+		String uri = String.format(GET_CONVERSATION_URI_TEMPLATE, getId(), conversationId);
+		JsonNode conversationNode = requester.executeApiGet(uri, worker);
 		try {
-			Conversation conversation = new Conversation(conversatinoId, this);
-			JacksonUtils.deserilizeIntoObject(conversationsNode, conversation);
-			conversations.put(conversatinoId, conversation);
+			Conversation conversation = new Conversation(conversationId, this);
+			JacksonUtils.deserilizeIntoObject(conversationNode, conversation);
+			conversations.put(conversationId, conversation);
 			return conversation;
 		} catch (IOException e) {
 			throw new LimooException(e);
 		}
+	}
+	
+	public List<Conversation> getConversations() throws LimooException {
+		String uri = String.format(GET_CONVERSATIONS_URI_TEMPLATE, getId());
+		JsonNode conversationsNode = requester.executeApiGet(uri, worker);
+		try {
+			ArrayNode conversationsArray = (ArrayNode) conversationsNode;
+			for (JsonNode conversationNode : conversationsArray) {
+				String conversationId = conversationNode.get("id").asText();
+				Conversation conversation = new Conversation(conversationId, this);
+				JacksonUtils.deserilizeIntoObject(conversationNode, conversation);
+				conversations.put(conversationId, conversation);
+			}
+		} catch (IOException e) {
+			throw new LimooException(e);
+		}
+		return new ArrayList<>(conversations.values());
 	}
 }

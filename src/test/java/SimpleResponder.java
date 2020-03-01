@@ -26,22 +26,30 @@ public class SimpleResponder {
 		Conversation c = ld.getConversationById("95d21dd1-be99-4611-ad3f-b49decc3d3e5");
 		List<Message> unreads = c.getUnreadMessages();
 		System.out.println(unreads.size());
+
+		c.send("Hey there");
+
+		List<Conversation> conversations = ld.getConversations();
+		System.out.println("Number of bot conversations: " + conversations.size());
+
 		ld.registerEventListener(new MessageCreatedEventListener(c) {
 
 			@Override
 			public void onNewMessage(Message msg) {
 				System.out.println(msg.getText());
 				if (msg.getThreadRootId() == null) {
-					for (MessageFile messageFile : msg.getFiles()) {
-						try (InputStream fileStream = messageFile.download()) {
-							try (Scanner sc = new Scanner(fileStream)) {
-								while (sc.hasNext())
-									System.out.println(sc.nextLine());
+					if (msg.getFiles() != null) {
+						for (MessageFile messageFile : msg.getFiles()) {
+							try (InputStream fileStream = messageFile.download()) {
+								try (Scanner sc = new Scanner(fileStream)) {
+									while (sc.hasNext())
+										System.out.println(sc.nextLine());
+								}
+							} catch (IOException e) {
+								e.printStackTrace();
+							} catch (LimooException e) {
+								e.printStackTrace();
 							}
-						} catch (IOException e) {
-							e.printStackTrace();
-						} catch (LimooException e) {
-							e.printStackTrace();
 						}
 					}
 					try {

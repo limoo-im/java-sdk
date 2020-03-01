@@ -31,6 +31,9 @@ c.send("Hi everyone!");
 // Send a message containing a file
 c.send(new Message.Builder().text("Here's a file!").file(new File("test.txt")));
 
+// Get all bot conversations
+List<Conversation> conversations = ld.getConversations();
+
 // Register a new MessageCreatedEventListener which notifies you whenever a new message is sent in the conversation
 ld.registerEventListener(new MessageCreatedEventListener(c) {
 	@Override
