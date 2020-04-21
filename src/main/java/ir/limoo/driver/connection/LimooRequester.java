@@ -10,6 +10,8 @@ import java.nio.file.Files;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 import ir.limoo.driver.entity.User;
@@ -29,7 +31,7 @@ import okhttp3.Response;
 
 public class LimooRequester implements Closeable {
 
-	private static final transient org.apache.log4j.Logger logger = org.apache.log4j.Logger
+	private static final transient org.slf4j.Logger logger = LoggerFactory
 			.getLogger(LimooRequester.class);
 
 	private static final String LOGIN_URI = "j_spring_security_check";
@@ -62,7 +64,7 @@ public class LimooRequester implements Closeable {
 				return false;
 			}
 		} catch (IOException e) {
-			logger.error(e);
+			logger.error("", e);
 			return false;
 		}
 		return true;
