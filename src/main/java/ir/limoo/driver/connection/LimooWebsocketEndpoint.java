@@ -3,7 +3,6 @@ package ir.limoo.driver.connection;
 import java.io.Closeable;
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
 import org.atmosphere.wasync.Client;
 import org.atmosphere.wasync.ClientFactory;
 import org.atmosphere.wasync.Decoder;
@@ -14,6 +13,8 @@ import org.atmosphere.wasync.Options;
 import org.atmosphere.wasync.Request;
 import org.atmosphere.wasync.RequestBuilder;
 import org.atmosphere.wasync.Socket;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -27,7 +28,7 @@ import ir.limoo.driver.util.JacksonUtils;
 
 public class LimooWebsocketEndpoint implements Closeable {
 
-	private static final transient Logger logger = Logger.getLogger(LimooWebsocketEndpoint.class);
+	private static final transient Logger logger = LoggerFactory.getLogger(LimooWebsocketEndpoint.class);
 	
 	private static final String MESSAGE_CREATED_EVENT = "message_created";
 	private static final String AUTHENTICATION_FAILED_EVENT = "authentication_failed";
@@ -115,7 +116,7 @@ public class LimooWebsocketEndpoint implements Closeable {
 			try {
 				Thread.sleep(getNextConnectionAttemptDelay());
 			} catch (InterruptedException e1) {
-				logger.error(e1);
+				logger.error("", e1);
 			}
 		}
 	}

@@ -6,7 +6,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,7 +22,7 @@ import ir.limoo.driver.util.JacksonUtils;
 
 public class Conversation {
 
-	private static final transient Logger logger = Logger.getLogger(Conversation.class);
+	private static final transient Logger logger = LoggerFactory.getLogger(Conversation.class);
 
 	@JsonProperty("my_membership")
 	private Membership membership;
@@ -143,7 +144,7 @@ public class Conversation {
 		try {
 			this.viewLog();
 		} catch (LimooException e) {
-			logger.error(e);
+			logger.error("", e);
 		}
 	}
 
