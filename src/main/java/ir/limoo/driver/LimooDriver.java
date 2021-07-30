@@ -1,66 +1,115 @@
 package ir.limoo.driver;
 
-import java.io.Closeable;
-import java.util.List;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import ir.limoo.driver.connection.LimooRequester;
 import ir.limoo.driver.connection.LimooWebsocketEndpoint;
-import ir.limoo.driver.entity.Conversation;
 import ir.limoo.driver.entity.User;
 import ir.limoo.driver.entity.Workspace;
-import ir.limoo.driver.event_listener.EventListener;
-import ir.limoo.driver.event_listener.EventListenerManager;
+import ir.limoo.driver.event.LimooEventListener;
+import ir.limoo.driver.event.LimooEventListenerManager;
 import ir.limoo.driver.exception.LimooException;
+import ir.limoo.driver.util.JacksonUtils;
+
+import java.io.Closeable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class LimooDriver implements Closeable {
 
-	private Workspace workspace;
-	private User user;
-	private LimooRequester limooRequester;
-	private EventListenerManager eventListenerManager;
-	private LimooWebsocketEndpoint websocketEndpoint;
+    private static final String GET_SELF_URI_TEMPLATE = "user/items/self";
+    private static final String GET_MY_WORKSPACES_URI_TEMPLATE = "user/my_workspaces";
+    private static final String GET_WORKSPACE_URI_TEMPLATE = "workspace/items/%s";
 
-	/**
-	 * @param limooUrl
-	 * @param workspaceKey
-	 * @param botUsername
-	 * @param botPassword
-	 * @throws LimooException
-	 */
-	public LimooDriver(String limooUrl, String workspaceKey, String botUsername, String botPassword)
-			throws LimooException {
-		try {
-			this.user = new User(botUsername, botPassword);
-			this.limooRequester = new LimooRequester(limooUrl, user);
-			this.workspace = new Workspace(workspaceKey, limooRequester);
-			this.eventListenerManager = new EventListenerManager();
-			this.websocketEndpoint = new LimooWebsocketEndpoint(workspace, eventListenerManager);
-		} catch (LimooException e) {
-			this.close();
-			throw e;
-		} catch (Exception e) {
-			this.close();
-			throw new LimooException(e);
-		}
-	}
+    private final LimooEventListenerManager limooEventListenerManager;
+    private final Map<String, Workspace> workspacesMap;
+    private final Map<String, LimooWebsocketEndpoint> websocketEndpointsMap;
+    private User bot;
 
-	public Conversation getConversationById(String conversationId) throws LimooException {
-		return workspace.getConversationById(conversationId);
-	}
-	
-	public List<Conversation> getConversations() throws LimooException {
-		return workspace.getConversations();
-	}
+    public LimooDriver(String limooUrl, String botUsername, String botPassword) throws LimooException {
+        limooEventListenerManager = new LimooEventListenerManager();
+        LimooRequester.init(limooUrl, botUsername, botPassword);
+        getAndInitBot();
+        workspacesMap = new HashMap<>();
+        websocketEndpointsMap = new HashMap<>();
+        try {
+            getAndInitWorkspaces();
+        } catch (Exception e) {
+            close();
+            throw new LimooException(e);
+        }
+    }
 
-	public void registerEventListener(EventListener eventListener) {
-		eventListenerManager.addToListeners(eventListener);
-	}
+    private void getAndInitBot() throws LimooException {
+        JsonNode botNode = LimooRequester.getInstance().executeApiGet(GET_SELF_URI_TEMPLATE, null);
+        try {
+            bot = JacksonUtils.deserializeObject(botNode, User.class);
+        } catch (JsonProcessingException e) {
+            throw new LimooException(e);
+        }
+    }
 
-	@Override
-	public void close() {
-		if (limooRequester != null)
-			limooRequester.close();
-		if (websocketEndpoint != null)
-			websocketEndpoint.close();
-	}
+    private void getAndInitWorkspaces() throws LimooException {
+        JsonNode myWorkspacesNode = LimooRequester.getInstance().executeApiGet(GET_MY_WORKSPACES_URI_TEMPLATE, null);
+        List<Workspace> workspaces = JacksonUtils.deserializeObjectToList(myWorkspacesNode, Workspace.class);
+        if (workspaces != null) {
+            for (Workspace workspace : workspaces) {
+                workspacesMap.put(workspace.getKey(), workspace);
+                String websocketUrl = workspace.getWorker().getWebsocketUrl();
+                if (!websocketEndpointsMap.containsKey(websocketUrl)) {
+                    websocketEndpointsMap.put(websocketUrl, new LimooWebsocketEndpoint(workspace, limooEventListenerManager));
+                }
+            }
+        } else {
+            throw new LimooException("The provided bot isn't member of any workspace.");
+        }
+    }
+
+    public void addEventListener(LimooEventListener listener) {
+        this.limooEventListenerManager.addToListeners(listener);
+    }
+
+    public void removeEventListener(LimooEventListener listener) {
+        this.limooEventListenerManager.removeFromListeners(listener);
+    }
+
+    public User getBot() {
+        return bot;
+    }
+
+    public List<Workspace> getWorkspaces() {
+        return new ArrayList<>(workspacesMap.values());
+    }
+
+    public Workspace getWorkspaceByKey(String workspaceKey) {
+        return workspacesMap.get(workspaceKey);
+    }
+
+    public void addWorkspace(String workspaceId) throws LimooException {
+        Workspace existingWorkspace = workspacesMap.values().stream()
+                .filter(w -> w.getId().equals(workspaceId))
+                .findAny().orElse(null);
+        if (existingWorkspace == null) {
+            JsonNode workspaceNode = LimooRequester.getInstance().executeApiGet(GET_WORKSPACE_URI_TEMPLATE, null);
+            try {
+                Workspace workspace = JacksonUtils.deserializeObject(workspaceNode, Workspace.class);
+                workspacesMap.put(workspace.getKey(), workspace);
+                String websocketUrl = workspace.getWorker().getWebsocketUrl();
+                if (!websocketEndpointsMap.containsKey(websocketUrl)) {
+                    websocketEndpointsMap.put(websocketUrl, new LimooWebsocketEndpoint(workspace, limooEventListenerManager));
+                }
+            } catch (JsonProcessingException e) {
+                throw new LimooException(e);
+            }
+        }
+    }
+
+    @Override
+    public void close() {
+        for (LimooWebsocketEndpoint limooWebsocketEndpoint : websocketEndpointsMap.values()) {
+            limooWebsocketEndpoint.close();
+        }
+    }
 }

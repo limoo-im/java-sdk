@@ -1,198 +1,190 @@
 package ir.limoo.driver.entity;
 
-import java.io.File;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import ir.limoo.driver.connection.LimooRequester;
+import ir.limoo.driver.exception.LimooException;
+import ir.limoo.driver.util.JacksonUtils;
+import ir.limoo.driver.util.MessageUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import ir.limoo.driver.connection.LimooRequester;
-import ir.limoo.driver.exception.LimooException;
-import ir.limoo.driver.exception.LimooFileUploadException;
-import ir.limoo.driver.util.JacksonUtils;
-
 public class Conversation {
 
-	private static final transient Logger logger = LoggerFactory.getLogger(Conversation.class);
+    private static final transient Logger logger = LoggerFactory.getLogger(Conversation.class);
 
-	@JsonProperty("my_membership")
-	private Membership membership;
+    private static final String GET_MESSAGES_URI_TEMPLATE = "workspace/items/%s/conversation/items/%s/message/items?since=%d";
+    private static final String GET_MESSAGE_FILE_INFO_URI_TEMPLATE = MessageUtils.MESSAGES_ROOT_URI_TEMPLATE + "/%s/files/info";
+    private static final String VIEW_CONVERSATION_URI_TEMPLATE = "workspace/items/%s/conversation/items/%s/view_log";
 
-	@JsonProperty("total_message_count")
-	private long totalMsgCount;
+    @JsonProperty("my_membership")
+    private Membership membership;
 
-	@JsonProperty("id")
-	private String id;
+    @JsonProperty("total_message_count")
+    private long totalMsgCount;
 
-	private static final String SEND_MSG_URI_TEMPLATE = "workspace/items/%s/conversation/items/%s/message/items";
-	private static final String GET_MESSAGES_URI_TEMPLATE = "workspace/items/%s/conversation/items/%s/message/items?since=%d";
-	private static final String VIEW_CONVERSATION_URI_TEMPLATE = "workspace/items/%s/conversation/items/%s/view_log";
+    @JsonProperty("id")
+    private String id;
 
-	private Workspace workspace;
-	private LimooRequester requester;
+    private ConversationType type;
+    private Workspace workspace;
 
-	public Conversation() {
+    public Conversation(Workspace workspace) {
+        this.workspace = workspace;
+    }
 
-	}
+    public Conversation(String id, ConversationType type, Workspace workspace) {
+        this.id = id;
+        this.type = type;
+        this.workspace = workspace;
+    }
 
-	public Conversation(String id, Workspace workspace) {
-		this.id = id;
-		this.workspace = workspace;
-		this.requester = workspace.getRequester();
-	}
+    public String getId() {
+        return id;
+    }
 
-	public String getId() {
-		return id;
-	}
+    public void setId(String id) {
+        this.id = id;
+    }
 
-	public void setId(String id) {
-		this.id = id;
-	}
+    public Membership getMembership() {
+        return membership;
+    }
 
-	public Membership getMembership() {
-		return membership;
-	}
+    public void setMembership(Membership membership) {
+        this.membership = membership;
+    }
 
-	public void setMembership(Membership membership) {
-		this.membership = membership;
-	}
+    public long getTotalMsgCount() {
+        return totalMsgCount;
+    }
 
-	public long getTotalMsgCount() {
-		return totalMsgCount;
-	}
+    public void setTotalMsgCount(long totalMsgCount) {
+        this.totalMsgCount = totalMsgCount;
+    }
 
-	public void setTotalMsgCount(long totalMsgCount) {
-		this.totalMsgCount = totalMsgCount;
-	}
+    public ConversationType getType() {
+        return type;
+    }
 
-	public Workspace getWorkspace() {
-		return this.workspace;
-	}
+    public void setType(ConversationType type) {
+        this.type = type;
+    }
 
-	/**
-	 * 
-	 * @param message
-	 * @return The created message
-	 * @throws LimooException
-	 */
-	public Message send(String message) throws LimooException {
-		return send(new Message.Builder().text(message));
-	}
+    public Workspace getWorkspace() {
+        return this.workspace;
+    }
 
-	/**
-	 * @param Message builder
-	 * @return The created message
-	 * @throws LimooFileUploadException
-	 */
-	public Message send(Message.Builder builder) throws LimooFileUploadException, LimooException {
-		builder.workspace(workspace);
-		Message toBeCreated = builder.build();
-		// Upload files
-		if (toBeCreated.getUploadableFiles() != null) {
-			for (File file : toBeCreated.getUploadableFiles()) {
-				try {
-					JsonNode uploadedNode = requester.uploadFile(file, workspace.getWorker());
-					MessageFile fileInfo = JacksonUtils.deserilizeObjectToList(uploadedNode, MessageFile.class).get(0);
-					toBeCreated.getCreatedFileInfos().add(fileInfo);
-				} catch (Exception e) {
-					throw new LimooFileUploadException(e);
-				}
-			}
-		}
-		String uri = String.format(SEND_MSG_URI_TEMPLATE, workspace.getId(), id);
-		JsonNode bodyNode = JacksonUtils.serializeObjectAsJsonNode(toBeCreated);
-		JsonNode createdMsgNode = requester.executeApiPost(uri, bodyNode, workspace.getWorker());
-		try {
-			return JacksonUtils.deserilizeObject(createdMsgNode, Message.class);
-		} catch (JsonProcessingException e) {
-			throw new LimooException(e);
-		}
-	}
+    public void setWorkspace(Workspace workspace) {
+        this.workspace = workspace;
+    }
 
-	public List<Message> getUnreadMessages() throws LimooException {
-		String uri = String.format(GET_MESSAGES_URI_TEMPLATE, workspace.getId(), id, membership.lastViewedAt.getTime());
-		ArrayNode msgsNode = (ArrayNode) requester.executeApiGet(uri, workspace.getWorker());
-		List<Message> messages = new ArrayList<>();
-		for (JsonNode msgNode : msgsNode) {
-			Message message = new Message(workspace);
-			try {
-				JacksonUtils.deserilizeIntoObject(msgNode, message);
-				messages.add(message);
-			} catch (IOException e) {
-				throw new LimooException(e);
-			}
-		}
-//		List<Message> messages = JacksonUtils.deserilizeObjectToList(msgsNode, Message.class);
-//		for (Message message : messages) {
-//			message.setWorkspace(workspace);
-//		}
-		viewLog();
-		return messages;
-	}
+    public Message send(String message) throws LimooException {
+        return send(new Message.Builder().text(message));
+    }
 
-	public void onNewMessage(Message message) {
-		this.totalMsgCount++;
-		try {
-			this.viewLog();
-		} catch (LimooException e) {
-			logger.error("", e);
-		}
-	}
+    public Message send(Message.Builder builder) throws LimooException {
+        return MessageUtils.sendMessage(builder, workspace, id);
+    }
 
-	public void viewLog() throws LimooException {
-		String uri = String.format(VIEW_CONVERSATION_URI_TEMPLATE, workspace.getId(), id);
-		ObjectNode bodyNode = JacksonUtils.createEmptyObjectNode().put("prev_conversation_id", id);
-		requester.executeApiPost(uri, bodyNode, workspace.getWorker());
-		membership.manualView(); // TODO lastViewedAt should be updated using view_log response
-	}
+    public List<Message> getUnreadMessages() throws LimooException {
+        String uri = String.format(GET_MESSAGES_URI_TEMPLATE, workspace.getId(), id, membership.lastViewedAt.getTime());
+        ArrayNode messagesNode = (ArrayNode) LimooRequester.getInstance().executeApiGet(uri, workspace.getWorker());
+        List<Message> messages = new ArrayList<>();
+        for (JsonNode messageNode : messagesNode) {
+            Message message = new Message(workspace);
+            try {
+                JacksonUtils.deserializeIntoObject(messageNode, message);
+                messages.add(message);
+            } catch (IOException e) {
+                throw new LimooException(e);
+            }
+        }
+        viewLog();
+        return messages;
+    }
 
-	public class Membership {
-		@JsonProperty("last_viewed_at")
-		private Date lastViewedAt;
+    public List<MessageFile> getFilesOfMessage(String messageId) throws LimooException {
+        String uri = String.format(GET_MESSAGE_FILE_INFO_URI_TEMPLATE, workspace.getId(), id, messageId);
+        ArrayNode fileInfosNode = (ArrayNode) LimooRequester.getInstance().executeApiGet(uri, workspace.getWorker());
+        List<MessageFile> fileInfos = new ArrayList<>();
+        for (JsonNode fileInfoNode : fileInfosNode) {
+            MessageFile fileInfo = new MessageFile();
+            try {
+                JacksonUtils.deserializeIntoObject(fileInfoNode, fileInfo);
+                fileInfos.add(fileInfo);
+            } catch (IOException e) {
+                throw new LimooException(e);
+            }
+        }
+        return fileInfos;
+    }
 
-		@JsonProperty("msg_count")
-		private long readMsgCount;
+    public void onNewMessage() {
+        this.totalMsgCount++;
+        this.viewLog();
+    }
 
-		@JsonProperty("mention_count")
-		private int mentionCount;
+    public void viewLog() {
+        String uri = String.format(VIEW_CONVERSATION_URI_TEMPLATE, workspace.getId(), id);
+        ObjectNode bodyNode = JacksonUtils.createEmptyObjectNode().put("prev_conversation_id", id);
+        try {
+            JsonNode resNode = LimooRequester.getInstance().executeApiPost(uri, bodyNode, workspace.getWorker());
+            JsonNode lastViewedAtTimes = resNode.get("last_viewed_at_times");
+            Date lastViewedAt = new Date();
+            if (lastViewedAtTimes.has(id))
+                lastViewedAt = new Date(lastViewedAtTimes.get(id).asLong());
+            membership.manualView(lastViewedAt);
+        } catch (LimooException e) {
+            logger.error("", e);
+        }
+    }
 
-		public Date getLastViewedAt() {
-			return lastViewedAt;
-		}
+    public class Membership {
+        @JsonProperty("last_viewed_at")
+        private Date lastViewedAt;
 
-		public void setLastViewedAt(Date lastViewedAt) {
-			this.lastViewedAt = lastViewedAt;
-		}
+        @JsonProperty("msg_count")
+        private long readMsgCount;
 
-		public long getReadMsgCount() {
-			return readMsgCount;
-		}
+        @JsonProperty("mention_count")
+        private int mentionCount;
 
-		public void setReadMsgCount(long readMsgCount) {
-			this.readMsgCount = readMsgCount;
-		}
+        public Date getLastViewedAt() {
+            return lastViewedAt;
+        }
 
-		public int getMentionCount() {
-			return mentionCount;
-		}
+        public void setLastViewedAt(Date lastViewedAt) {
+            this.lastViewedAt = lastViewedAt;
+        }
 
-		public void setMentionCount(int mentionCount) {
-			this.mentionCount = mentionCount;
-		}
+        public long getReadMsgCount() {
+            return readMsgCount;
+        }
 
-		public void manualView() {
-			this.lastViewedAt = new Date();
-			this.mentionCount = 0;
-			this.readMsgCount = getTotalMsgCount();
-		}
-	}
+        public void setReadMsgCount(long readMsgCount) {
+            this.readMsgCount = readMsgCount;
+        }
+
+        public int getMentionCount() {
+            return mentionCount;
+        }
+
+        public void setMentionCount(int mentionCount) {
+            this.mentionCount = mentionCount;
+        }
+
+        public void manualView(Date lastViewedAt) {
+            this.lastViewedAt = lastViewedAt;
+            this.mentionCount = 0;
+            this.readMsgCount = getTotalMsgCount();
+        }
+    }
 }
