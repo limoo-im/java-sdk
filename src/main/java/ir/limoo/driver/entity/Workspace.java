@@ -9,7 +9,9 @@ import ir.limoo.driver.util.JacksonUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Workspace {
 
@@ -32,6 +34,11 @@ public class Workspace {
     private String defaultConversationId;
 
     private Conversation defaultConversation;
+    private final Map<String, Conversation> conversationsMap;
+
+    public Workspace() {
+        conversationsMap = new HashMap<>();
+    }
 
     public String getKey() {
         return key;
@@ -60,11 +67,14 @@ public class Workspace {
     }
 
     public Conversation getConversationById(String conversationId) throws LimooException {
+        if (conversationsMap.containsKey(conversationId))
+            return conversationsMap.get(conversationId);
         String uri = String.format(GET_CONVERSATION_URI_TEMPLATE, getId(), conversationId);
         JsonNode conversationNode = LimooRequester.getInstance().executeApiGet(uri, worker);
         try {
             Conversation conversation = new Conversation(this);
             JacksonUtils.deserializeIntoObject(conversationNode, conversation);
+            conversationsMap.put(conversationId, conversation);
             return conversation;
         } catch (IOException e) {
             throw new LimooException(e);
@@ -76,13 +86,12 @@ public class Workspace {
         JsonNode conversationsNode = LimooRequester.getInstance().executeApiGet(uri, worker);
         try {
             ArrayNode conversationsArray = (ArrayNode) conversationsNode;
-            List<Conversation> conversations = new ArrayList<>();
             for (JsonNode conversationNode : conversationsArray) {
                 Conversation conversation = new Conversation(this);
                 JacksonUtils.deserializeIntoObject(conversationNode, conversation);
-                conversations.add(conversation);
+                conversationsMap.put(conversation.getId(), conversation);
             }
-            return conversations;
+            return new ArrayList<>(conversationsMap.values());
         } catch (IOException e) {
             throw new LimooException(e);
         }
