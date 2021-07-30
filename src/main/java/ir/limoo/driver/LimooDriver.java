@@ -6,10 +6,13 @@ import ir.limoo.driver.connection.LimooRequester;
 import ir.limoo.driver.connection.LimooWebsocketEndpoint;
 import ir.limoo.driver.entity.User;
 import ir.limoo.driver.entity.Workspace;
+import ir.limoo.driver.event.JoinWorkspaceEventListener;
 import ir.limoo.driver.event.LimooEventListener;
 import ir.limoo.driver.event.LimooEventListenerManager;
 import ir.limoo.driver.exception.LimooException;
 import ir.limoo.driver.util.JacksonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.util.ArrayList;
@@ -18,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 
 public class LimooDriver implements Closeable {
+
+    private static final transient Logger logger = LoggerFactory.getLogger(LimooDriver.class);
 
     private static final String GET_SELF_URI_TEMPLATE = "user/items/self";
     private static final String GET_MY_WORKSPACES_URI_TEMPLATE = "user/my_workspaces";
@@ -40,6 +45,7 @@ public class LimooDriver implements Closeable {
             close();
             throw new LimooException(e);
         }
+        handleJoinWorkspaceEvent();
     }
 
     private void getAndInitBot() throws LimooException {
@@ -67,6 +73,21 @@ public class LimooDriver implements Closeable {
         }
     }
 
+    private void handleJoinWorkspaceEvent() {
+        limooEventListenerManager.addToListeners(new JoinWorkspaceEventListener() {
+            @Override
+            public void onJoinWorkspace(String userId, String workspaceId) {
+                if (userId.equals(bot.getId())) {
+                    try {
+                        addWorkspace(workspaceId);
+                    } catch (LimooException e) {
+                        logger.error("", e);
+                    }
+                }
+            }
+        });
+    }
+
     public void addEventListener(LimooEventListener listener) {
         this.limooEventListenerManager.addToListeners(listener);
     }
@@ -87,7 +108,7 @@ public class LimooDriver implements Closeable {
         return workspacesMap.get(workspaceKey);
     }
 
-    public void addWorkspace(String workspaceId) throws LimooException {
+    private void addWorkspace(String workspaceId) throws LimooException {
         Workspace existingWorkspace = workspacesMap.values().stream()
                 .filter(w -> w.getId().equals(workspaceId))
                 .findAny().orElse(null);
