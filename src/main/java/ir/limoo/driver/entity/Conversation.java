@@ -137,11 +137,13 @@ public class Conversation {
         ObjectNode bodyNode = JacksonUtils.createEmptyObjectNode().put("prev_conversation_id", id);
         try {
             JsonNode resNode = LimooRequester.getInstance().executeApiPost(uri, bodyNode, workspace.getWorker());
-            JsonNode lastViewedAtTimes = resNode.get("last_viewed_at_times");
-            Date lastViewedAt = new Date();
-            if (lastViewedAtTimes.has(id))
-                lastViewedAt = new Date(lastViewedAtTimes.get(id).asLong());
-            membership.manualView(lastViewedAt);
+            if (membership != null) {
+                JsonNode lastViewedAtTimes = resNode.get("last_viewed_at_times");
+                Date lastViewedAt = new Date();
+                if (lastViewedAtTimes.has(id))
+                    lastViewedAt = new Date(lastViewedAtTimes.get(id).asLong());
+                membership.manualView(lastViewedAt);
+            }
         } catch (LimooException e) {
             logger.error("", e);
         }
