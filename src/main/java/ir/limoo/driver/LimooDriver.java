@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import ir.limoo.driver.connection.LimooRequester;
 import ir.limoo.driver.connection.LimooWebsocketEndpoint;
-import ir.limoo.driver.entity.User;
+import ir.limoo.driver.entity.Bot;
 import ir.limoo.driver.entity.Workspace;
 import ir.limoo.driver.event.JoinWorkspaceEventListener;
 import ir.limoo.driver.event.LimooEventListener;
@@ -31,7 +31,7 @@ public class LimooDriver implements Closeable {
     private final LimooEventListenerManager limooEventListenerManager;
     private final Map<String, Workspace> workspacesMap;
     private final Map<String, LimooWebsocketEndpoint> websocketEndpointsMap;
-    private User bot;
+    private Bot bot;
 
     public LimooDriver(String limooUrl, String botUsername, String botPassword) throws LimooException {
         limooEventListenerManager = new LimooEventListenerManager();
@@ -51,7 +51,7 @@ public class LimooDriver implements Closeable {
     private void getAndInitBot() throws LimooException {
         JsonNode botNode = LimooRequester.getInstance().executeApiGet(GET_SELF_URI_TEMPLATE, null);
         try {
-            bot = JacksonUtils.deserializeObject(botNode, User.class);
+            bot = JacksonUtils.deserializeObject(botNode, Bot.class);
         } catch (JsonProcessingException e) {
             throw new LimooException(e);
         }
@@ -96,7 +96,7 @@ public class LimooDriver implements Closeable {
         this.limooEventListenerManager.removeFromListeners(listener);
     }
 
-    public User getBot() {
+    public Bot getBot() {
         return bot;
     }
 
