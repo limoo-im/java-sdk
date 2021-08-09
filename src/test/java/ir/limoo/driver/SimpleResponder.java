@@ -16,55 +16,55 @@ import java.util.Scanner;
 
 public class SimpleResponder {
 
-    public static void main(String[] args) {
-        try {
-            new SimpleResponder().limooTest();
-        } catch (LimooException e) {
-            e.printStackTrace();
-        }
-    }
+	public static void main(String[] args) {
+		try {
+			new SimpleResponder().limooTest();
+		} catch (LimooException e) {
+			e.printStackTrace();
+		}
+	}
 
-    private void limooTest() throws LimooException {
-        LimooDriver ld = new LimooDriver("https://web.limoo.im/Limonad", "botUsername", "botPassword");
+	private void limooTest() throws LimooException {
+		LimooDriver ld = new LimooDriver("https://web.limoo.im/Limonad", "botUsername", "botPassword");
 
-        Workspace workspace = ld.getWorkspaceByKey("myWorkspace");
-        List<Conversation> conversations = workspace.getConversations();
-        System.out.println("Number of bot conversations: " + conversations.size());
+		Workspace workspace = ld.getWorkspaceByKey("myWorkspace");
+		List<Conversation> conversations = workspace.getConversations();
+		System.out.println("Number of bot conversations: " + conversations.size());
 
-        Conversation c = workspace.getConversationById("conversationId");
-        List<Message> unreads = c.getUnreadMessages();
-        System.out.println("Number of unread messages in specified conversation: " + unreads.size());
-        c.send("Hey there");
+		Conversation c = workspace.getConversationById("conversationId");
+		List<Message> unreads = c.getUnreadMessages();
+		System.out.println("Number of unread messages in specified conversation: " + unreads.size());
+		c.send("Hey there");
 
-        ld.addEventListener(new MessageCreatedEventListener() {
-            @Override
-            public void onNewMessage(Message message, Conversation conversation) {
-                System.out.println(message.getText());
+		ld.addEventListener(new MessageCreatedEventListener() {
+			@Override
+			public void onNewMessage(Message message, Conversation conversation) {
+				System.out.println(message.getText());
 
-                // Print the contents of the text attachments
-                if (message.getFileInfos() != null) {
-                    for (MessageFile messageFile : message.getFileInfos()) {
-                        try (InputStream fileStream = messageFile.download()) {
-                            try (Scanner sc = new Scanner(fileStream)) {
-                                while (sc.hasNext())
-                                    System.out.println(sc.nextLine());
-                            }
-                        } catch (IOException | LimooException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
+				// Print the contents of the text attachments
+				if (message.getFileInfos() != null) {
+					for (MessageFile messageFile : message.getFileInfos()) {
+						try (InputStream fileStream = messageFile.download()) {
+							try (Scanner sc = new Scanner(fileStream)) {
+								while (sc.hasNext())
+									System.out.println(sc.nextLine());
+							}
+						} catch (IOException | LimooException e) {
+							e.printStackTrace();
+						}
+					}
+				}
 
-                // Send a file in the response of the message
-                if (message.getThreadRootId() == null) {
-                    try {
-                        File file = new File(getClass().getResource("test.txt").toURI());
-                        message.sendInThread(new Message.Builder().text("Message received").file(file));
-                    } catch (LimooException | URISyntaxException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
-    }
+				// Send a file in the response of the message
+				if (message.getThreadRootId() == null) {
+					try {
+						File file = new File(getClass().getResource("test.txt").toURI());
+						message.sendInThread(new Message.Builder().text("Message received").file(file));
+					} catch (LimooException | URISyntaxException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		});
+	}
 }

@@ -1,41 +1,41 @@
 plugins {
-    // Apply the java-library plugin to add support for Java Library
-    id 'java-library'
-    id 'application'
+	// Apply the java-library plugin to add support for Java Library
+	id 'java-library'
+	id 'application'
 }
 
 repositories {
-    mavenCentral()
+	mavenCentral()
 }
 
 dependencies {
-    // OkHttp client
-    implementation group: 'com.squareup.okhttp3', name: 'okhttp', version: '4.9.1'
-    implementation group: 'com.squareup.okhttp3', name: 'okhttp-urlconnection', version: '4.9.1'
+	// OkHttp client
+	implementation group: 'com.squareup.okhttp3', name: 'okhttp', version: '4.9.1'
+	implementation group: 'com.squareup.okhttp3', name: 'okhttp-urlconnection', version: '4.9.1'
 
-    // Jackson
-    implementation group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-json-provider', version: '2.12.4'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.4'
+	// Jackson
+	implementation group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-json-provider', version: '2.12.4'
+	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.4'
 
-    // log4j
-    implementation group: 'log4j', name: 'log4j', version: '1.2.17'
-    implementation group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.31'
+	// log4j
+	implementation group: 'log4j', name: 'log4j', version: '1.2.17'
+	implementation group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.31'
 
-    // Atmosphere
-    implementation group: 'org.atmosphere', name: 'wasync', version: '2.1.7'
+	// Atmosphere
+	implementation group: 'org.atmosphere', name: 'wasync', version: '2.1.7'
 }
 
-jar  {
-    baseName = 'limoo-java-driver'
-    version = "${specVersion}"
-    // applicationDefaultJvmArgs = ["-g:vars"]
+jar {
+	baseName = 'limoo-java-driver'
+	version = "${specVersion}"
+	// applicationDefaultJvmArgs = ["-g:vars"]
 
-    def revision = 'git rev-parse HEAD'.execute().text.trim()
-    def date = new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
-    manifest {
-        attributes 'Implementation-Title': 'Limoo java driver',
-          'Implementation-Version': version,
-          "Date": date,
-          "Git-Revision": revision
-    }
+	def revision = 'git rev-parse HEAD'.execute().text.trim()
+	def date = new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+	manifest {
+		attributes 'Implementation-Title': 'Limoo java driver',
+				'Implementation-Version': version,
+				"Date": date,
+				"Git-Revision": revision
+	}
 }

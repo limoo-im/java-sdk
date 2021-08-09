@@ -39,32 +39,32 @@ List<Conversation> conversations = w.getConversations();
 
 // Register a new MessageCreatedEventListener which notifies you whenever a new message is sent in the conversation
 ld.addEventListener(new MessageCreatedEventListener() {
-    @Override
-    public void onNewMessage(Message msg, Conversation c) {
-        System.out.println(msg.getText());
+	@Override
+	public void onNewMessage(Message msg, Conversation c) {
+		System.out.println(msg.getText());
+		
+		// Download attachments of the message
+		if (msg.getFileInfos() != null) {
+			for (MessageFile messageFile : msg.getFileInfos()) {
+				try (InputStream inputStream = messageFile.download()) {
+					System.out.println(inputStream.available());
+				} catch (IOException e) {
+					e.printStackTrace();
+				} catch (LimooException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 
-        // Download attachments of the message
-        if (msg.getFileInfos() != null) {
-            for (MessageFile messageFile : msg.getFileInfos()) {
-                try (InputStream inputStream = messageFile.download()) {
-                    System.out.println(inputStream.available());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (LimooException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        // Send a message in the thread of the new message (msg can be root of a thread only if its threadRootId is null)
-        if (msg.getThreadRootId() == null) {
-            try {
-                c.send(new Message.Builder().text("Message received").threadRootId(msg.getId()));
-            } catch (LimooException e) {
-                e.printStackTrace();
-            }
-        }
-    }
+		// Send a message in the thread of the new message (msg can be root of a thread only if its threadRootId is null)
+		if (msg.getThreadRootId() == null) {
+			try {
+				c.send(new Message.Builder().text("Message received").threadRootId(msg.getId()));
+			} catch (LimooException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 });
 
 // When you're done with the driver:

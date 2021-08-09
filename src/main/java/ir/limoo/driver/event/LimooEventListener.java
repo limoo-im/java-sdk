@@ -4,7 +4,7 @@ import java.io.IOException;
 
 public interface LimooEventListener {
 
-    boolean canHandle(LimooEvent event);
+	boolean canHandle(LimooEvent event);
 
-    void handleEvent(LimooEvent event) throws IOException;
+	void handleEvent(LimooEvent event) throws IOException;
 }
