@@ -1,5 +1,7 @@
 # Limoo java SDK
-A Java SDK for Limoo.  
+A Java SDK for Limoo.
+
+This SDK is assumed to be used with Java version 8. It might be incompatible with newer versions.
   
 *Wondering what Limoo is? Visit https://limoo.im*  
   
