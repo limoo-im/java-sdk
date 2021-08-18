@@ -110,7 +110,7 @@ public class LimooWebsocketEndpoint implements Closeable {
 	}
 
 	private void attemptToConnect() throws IOException, LimooException {
-		requestBuilder.header("Cookie", "ACCESSTOKEN=" + LimooRequester.getInstance().getAccessToken());
+		requestBuilder.header("Cookie", "ACCESSTOKEN=" + workspace.getRequester().getAccessToken());
 		socket.open(requestBuilder.build());
 	}
 

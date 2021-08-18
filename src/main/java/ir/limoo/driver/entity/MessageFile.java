@@ -1,7 +1,6 @@
 package ir.limoo.driver.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import ir.limoo.driver.connection.LimooRequester;
 import ir.limoo.driver.exception.LimooException;
 
 import java.io.InputStream;
@@ -51,6 +50,6 @@ public class MessageFile {
 	}
 
 	public InputStream download() throws LimooException {
-		return LimooRequester.getInstance().downloadFile(hash, name, workspace.getWorker());
+		return workspace.getRequester().downloadFile(hash, name, workspace.getWorker());
 	}
 }

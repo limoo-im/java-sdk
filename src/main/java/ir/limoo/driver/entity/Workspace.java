@@ -33,11 +33,13 @@ public class Workspace {
 	@JsonProperty("default_conversation_id")
 	private String defaultConversationId;
 
-	private Conversation defaultConversation;
+	private final LimooRequester requester;
 	private final Map<String, Conversation> conversationsMap;
+	private Conversation defaultConversation;
 
-	public Workspace() {
-		conversationsMap = new HashMap<>();
+	public Workspace(LimooRequester requester) {
+		this.requester = requester;
+		this.conversationsMap = new HashMap<>();
 	}
 
 	public String getKey() {
@@ -60,6 +62,10 @@ public class Workspace {
 		return defaultConversationId;
 	}
 
+	public LimooRequester getRequester() throws LimooException {
+		return requester;
+	}
+
 	public Conversation getDefaultConversation() {
 		if (defaultConversation == null)
 			defaultConversation = new Conversation(defaultConversationId, ConversationType.PUBLIC, this);
@@ -70,7 +76,7 @@ public class Workspace {
 		if (conversationsMap.containsKey(conversationId))
 			return conversationsMap.get(conversationId);
 		String uri = String.format(GET_CONVERSATION_URI_TEMPLATE, getId(), conversationId);
-		JsonNode conversationNode = LimooRequester.getInstance().executeApiGet(uri, worker);
+		JsonNode conversationNode = requester.executeApiGet(uri, worker);
 		try {
 			Conversation conversation = new Conversation(this);
 			JacksonUtils.deserializeIntoObject(conversationNode, conversation);
@@ -83,7 +89,7 @@ public class Workspace {
 
 	public List<Conversation> getConversations() throws LimooException {
 		String uri = String.format(GET_CONVERSATIONS_URI_TEMPLATE, getId());
-		JsonNode conversationsNode = LimooRequester.getInstance().executeApiGet(uri, worker);
+		JsonNode conversationsNode = requester.executeApiGet(uri, worker);
 		try {
 			ArrayNode conversationsArray = (ArrayNode) conversationsNode;
 			for (JsonNode conversationNode : conversationsArray) {

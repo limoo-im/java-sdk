@@ -2,7 +2,6 @@ package ir.limoo.driver.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import ir.limoo.driver.connection.LimooRequester;
 import ir.limoo.driver.entity.Message;
 import ir.limoo.driver.entity.MessageFile;
 import ir.limoo.driver.entity.Workspace;
@@ -20,7 +19,7 @@ public class MessageUtils {
 		if (message.getUploadableFiles() != null) {
 			for (File file : message.getUploadableFiles()) {
 				try {
-					JsonNode uploadedNode = LimooRequester.getInstance().uploadFile(file, workspace.getWorker());
+					JsonNode uploadedNode = workspace.getRequester().uploadFile(file, workspace.getWorker());
 					MessageFile fileInfo = JacksonUtils.deserializeObjectToList(uploadedNode, MessageFile.class).get(0);
 					message.getCreatedFileInfos().add(fileInfo);
 				} catch (Exception e) {
@@ -31,7 +30,7 @@ public class MessageUtils {
 
 		String uri = String.format(MESSAGES_ROOT_URI_TEMPLATE, workspace.getId(), conversationId);
 		JsonNode bodyNode = JacksonUtils.serializeObjectAsJsonNode(message);
-		JsonNode createdMessageNode = LimooRequester.getInstance().executeApiPost(uri, bodyNode, workspace.getWorker());
+		JsonNode createdMessageNode = workspace.getRequester().executeApiPost(uri, bodyNode, workspace.getWorker());
 		try {
 			return JacksonUtils.deserializeObject(createdMessageNode, Message.class);
 		} catch (JsonProcessingException e) {

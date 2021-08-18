@@ -2,6 +2,7 @@ package ir.limoo.driver;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import ir.limoo.driver.connection.LimooRequester;
 import ir.limoo.driver.connection.LimooWebsocketEndpoint;
 import ir.limoo.driver.entity.Bot;
@@ -15,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,13 +31,14 @@ public class LimooDriver implements Closeable {
 	private static final String GET_WORKSPACE_URI_TEMPLATE = "workspace/items/%s";
 
 	private final LimooEventListenerManager limooEventListenerManager;
+	private final LimooRequester requester;
 	private final Map<String, Workspace> workspacesMap;
 	private final Map<String, LimooWebsocketEndpoint> websocketEndpointsMap;
 	private Bot bot;
 
 	public LimooDriver(String limooUrl, String botUsername, String botPassword) throws LimooException {
 		limooEventListenerManager = new LimooEventListenerManager();
-		LimooRequester.init(limooUrl, botUsername, botPassword);
+		requester = new LimooRequester(limooUrl, botUsername, botPassword);
 		getAndInitBot();
 		workspacesMap = new HashMap<>();
 		websocketEndpointsMap = new HashMap<>();
@@ -49,7 +52,7 @@ public class LimooDriver implements Closeable {
 	}
 
 	private void getAndInitBot() throws LimooException {
-		JsonNode botNode = LimooRequester.getInstance().executeApiGet(GET_SELF_URI_TEMPLATE, null);
+		JsonNode botNode = requester.executeApiGet(GET_SELF_URI_TEMPLATE, null);
 		try {
 			bot = JacksonUtils.deserializeObject(botNode, Bot.class);
 		} catch (JsonProcessingException e) {
@@ -58,18 +61,23 @@ public class LimooDriver implements Closeable {
 	}
 
 	private void getAndInitWorkspaces() throws LimooException {
-		JsonNode myWorkspacesNode = LimooRequester.getInstance().executeApiGet(GET_MY_WORKSPACES_URI_TEMPLATE, null);
-		List<Workspace> workspaces = JacksonUtils.deserializeObjectToList(myWorkspacesNode, Workspace.class);
-		if (workspaces != null) {
-			for (Workspace workspace : workspaces) {
+		ArrayNode workspacesNode = (ArrayNode) requester.executeApiGet(GET_MY_WORKSPACES_URI_TEMPLATE, null);
+		if (workspacesNode == null || workspacesNode.isEmpty()) {
+			throw new LimooException("The provided bot isn't member of any workspace.");
+		}
+
+		try {
+			for (JsonNode workspaceNode : workspacesNode) {
+				Workspace workspace = new Workspace(requester);
+				JacksonUtils.deserializeIntoObject(workspaceNode, workspace);
 				workspacesMap.put(workspace.getKey(), workspace);
 				String websocketUrl = workspace.getWorker().getWebsocketUrl();
 				if (!websocketEndpointsMap.containsKey(websocketUrl)) {
 					websocketEndpointsMap.put(websocketUrl, new LimooWebsocketEndpoint(workspace, limooEventListenerManager));
 				}
 			}
-		} else {
-			throw new LimooException("The provided bot isn't member of any workspace.");
+		} catch (IOException e) {
+			throw new LimooException("An error occurred while getting bot's workspaces.");
 		}
 	}
 
@@ -113,15 +121,16 @@ public class LimooDriver implements Closeable {
 				.filter(w -> w.getId().equals(workspaceId))
 				.findAny().orElse(null);
 		if (existingWorkspace == null) {
-			JsonNode workspaceNode = LimooRequester.getInstance().executeApiGet(GET_WORKSPACE_URI_TEMPLATE, null);
+			JsonNode workspaceNode = requester.executeApiGet(GET_WORKSPACE_URI_TEMPLATE, null);
 			try {
-				Workspace workspace = JacksonUtils.deserializeObject(workspaceNode, Workspace.class);
+				Workspace workspace = new Workspace(requester);
+				JacksonUtils.deserializeIntoObject(workspaceNode, workspace);
 				workspacesMap.put(workspace.getKey(), workspace);
 				String websocketUrl = workspace.getWorker().getWebsocketUrl();
 				if (!websocketEndpointsMap.containsKey(websocketUrl)) {
 					websocketEndpointsMap.put(websocketUrl, new LimooWebsocketEndpoint(workspace, limooEventListenerManager));
 				}
-			} catch (JsonProcessingException e) {
+			} catch (IOException e) {
 				throw new LimooException(e);
 			}
 		}

@@ -25,13 +25,12 @@ public class LimooRequester {
 	private static final String REFRESH_TOKEN_URI = "j_spring_jwt_security_check";
 	private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
-	private static LimooRequester instance;
 	private final OkHttpClient httpClient;
 	private final String limooUrl;
 	private final String botUsername;
 	private final String botPassword;
 
-	private LimooRequester(String limooUrl, String botUsername, String botPassword) {
+	public LimooRequester(String limooUrl, String botUsername, String botPassword) {
 		Logger.getLogger(OkHttpClient.class.getName()).setLevel(Level.FINE);
 		this.limooUrl = limooUrl;
 		this.botUsername = botUsername;
@@ -39,16 +38,6 @@ public class LimooRequester {
 		CookieManager cookieManager = new CookieManager();
 		cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
 		httpClient = new OkHttpClient().newBuilder().cookieJar(new JavaNetCookieJar(cookieManager)).build();
-	}
-
-	public static void init(String limooUrl, String botUsername, String botPassword) {
-		instance = new LimooRequester(limooUrl, botUsername, botPassword);
-	}
-
-	public static LimooRequester getInstance() throws LimooException {
-		if (instance == null)
-			throw new LimooException("LimooRequester not initialized");
-		return instance;
 	}
 
 	private void login() {

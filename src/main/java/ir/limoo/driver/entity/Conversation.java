@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import ir.limoo.driver.connection.LimooRequester;
 import ir.limoo.driver.exception.LimooException;
 import ir.limoo.driver.util.JacksonUtils;
 import ir.limoo.driver.util.MessageUtils;
@@ -98,7 +97,7 @@ public class Conversation {
 
 	public List<Message> getUnreadMessages() throws LimooException {
 		String uri = String.format(GET_MESSAGES_URI_TEMPLATE, workspace.getId(), id, membership.lastViewedAt.getTime());
-		ArrayNode messagesNode = (ArrayNode) LimooRequester.getInstance().executeApiGet(uri, workspace.getWorker());
+		ArrayNode messagesNode = (ArrayNode) workspace.getRequester().executeApiGet(uri, workspace.getWorker());
 		List<Message> messages = new ArrayList<>();
 		for (JsonNode messageNode : messagesNode) {
 			Message message = new Message(workspace);
@@ -122,7 +121,7 @@ public class Conversation {
 		String uri = String.format(VIEW_CONVERSATION_URI_TEMPLATE, workspace.getId(), id);
 		ObjectNode bodyNode = JacksonUtils.createEmptyObjectNode().put("prev_conversation_id", id);
 		try {
-			JsonNode resNode = LimooRequester.getInstance().executeApiPost(uri, bodyNode, workspace.getWorker());
+			JsonNode resNode = workspace.getRequester().executeApiPost(uri, bodyNode, workspace.getWorker());
 			if (membership != null) {
 				JsonNode lastViewedAtTimes = resNode.get("last_viewed_at_times");
 				Date lastViewedAt = new Date();
