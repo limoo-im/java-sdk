@@ -46,7 +46,7 @@ public class Message {
 	private List<File> files;
 	private Workspace workspace;
 
-	private Message() {
+	public Message() {
 	}
 
 	public Message(Workspace workspace) {

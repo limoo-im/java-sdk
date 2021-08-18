@@ -21,7 +21,6 @@ public class Conversation {
 	private static final transient Logger logger = LoggerFactory.getLogger(Conversation.class);
 
 	private static final String GET_MESSAGES_URI_TEMPLATE = "workspace/items/%s/conversation/items/%s/message/items?since=%d";
-	private static final String GET_MESSAGE_FILE_INFO_URI_TEMPLATE = MessageUtils.MESSAGES_ROOT_URI_TEMPLATE + "/%s/files/info";
 	private static final String VIEW_CONVERSATION_URI_TEMPLATE = "workspace/items/%s/conversation/items/%s/view_log";
 
 	@JsonProperty("my_membership")
@@ -35,6 +34,9 @@ public class Conversation {
 
 	private ConversationType type;
 	private Workspace workspace;
+
+	public Conversation() {
+	}
 
 	public Conversation(Workspace workspace) {
 		this.workspace = workspace;
@@ -109,22 +111,6 @@ public class Conversation {
 		}
 		viewLog();
 		return messages;
-	}
-
-	public List<MessageFile> getFilesOfMessage(String messageId) throws LimooException {
-		String uri = String.format(GET_MESSAGE_FILE_INFO_URI_TEMPLATE, workspace.getId(), id, messageId);
-		ArrayNode fileInfosNode = (ArrayNode) LimooRequester.getInstance().executeApiGet(uri, workspace.getWorker());
-		List<MessageFile> fileInfos = new ArrayList<>();
-		for (JsonNode fileInfoNode : fileInfosNode) {
-			MessageFile fileInfo = new MessageFile();
-			try {
-				JacksonUtils.deserializeIntoObject(fileInfoNode, fileInfo);
-				fileInfos.add(fileInfo);
-			} catch (IOException e) {
-				throw new LimooException(e);
-			}
-		}
-		return fileInfos;
 	}
 
 	public void onNewMessage() {
