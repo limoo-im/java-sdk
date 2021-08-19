@@ -4,11 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import ir.limoo.driver.entity.Conversation;
 import ir.limoo.driver.entity.ConversationType;
 
-public abstract class AddToConversationEventListener implements LimooEventListener {
+public abstract class AddedToConversationEventListener implements LimooEventListener {
 
 	private static final String ADDED_TO_CONVERSATION_EVENT = "added_to_conversation";
 
-	public AddToConversationEventListener() {
+	public AddedToConversationEventListener() {
 	}
 
 	public abstract void onAddToConversation(Conversation conversation);
