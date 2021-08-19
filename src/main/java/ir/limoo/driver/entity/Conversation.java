@@ -31,7 +31,7 @@ public class Conversation {
 	@JsonProperty("id")
 	private String id;
 
-	private ConversationType type;
+	private ConversationType conversationType;
 	private Workspace workspace;
 
 	public Conversation() {
@@ -41,9 +41,9 @@ public class Conversation {
 		this.workspace = workspace;
 	}
 
-	public Conversation(String id, ConversationType type, Workspace workspace) {
+	public Conversation(String id, ConversationType conversationType, Workspace workspace) {
 		this.id = id;
-		this.type = type;
+		this.conversationType = conversationType;
 		this.workspace = workspace;
 	}
 
@@ -71,12 +71,12 @@ public class Conversation {
 		this.totalMsgCount = totalMsgCount;
 	}
 
-	public ConversationType getType() {
-		return type;
+	public ConversationType getConversationType() {
+		return conversationType;
 	}
 
-	public void setType(ConversationType type) {
-		this.type = type;
+	public void setConversationType(ConversationType conversationType) {
+		this.conversationType = conversationType;
 	}
 
 	public Workspace getWorkspace() {
