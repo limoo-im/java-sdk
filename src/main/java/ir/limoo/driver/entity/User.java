@@ -58,7 +58,7 @@ public class User {
 			return nickname;
 		String displayName = "";
 		if (firstName != null && !firstName.isEmpty())
-			displayName += firstName;
+			displayName += firstName + " ";
 		if (lastName != null && !lastName.isEmpty())
 			displayName += lastName;
 		if (!displayName.isEmpty())
