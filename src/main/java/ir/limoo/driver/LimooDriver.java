@@ -67,8 +67,8 @@ public class LimooDriver implements Closeable {
 			for (JsonNode workspaceNode : workspacesNode) {
 				Workspace workspace = new Workspace(requester);
 				JacksonUtils.deserializeIntoObject(workspaceNode, workspace);
-				workspacesMap.put(workspace.getKey(), workspace);
-                websocketEndpoints.add(new LimooWebsocketEndpoint(workspace, limooEventListenerManager));
+				workspacesMap.put(workspace.getId(), workspace);
+                websocketEndpoints.add(new LimooWebsocketEndpoint(workspace, limooEventListenerManager, this));
 			}
 		} catch (IOException e) {
 			throw new LimooException("An error occurred while getting bot's workspaces.");
@@ -91,8 +91,8 @@ public class LimooDriver implements Closeable {
 				if (userId.equals(bot.getId())) {
 					try {
 						String workspaceId = dataNode.get("workspace_id").asText();
-						Workspace addedWorkspace = addWorkspace(workspaceId);
-						if (addedWorkspace != null) {
+                        if (!workspacesMap.containsKey(workspaceId)) {
+						    Workspace addedWorkspace = getWorkspaceById(workspaceId);
 							limooEventListenerManager.newEvent(new LimooEvent(
 									AddedToWorkspaceEventListener.ADDED_TO_WORKSPACE,
 									event.getEventData(),
@@ -123,27 +123,26 @@ public class LimooDriver implements Closeable {
 		return new ArrayList<>(workspacesMap.values());
 	}
 
-	public Workspace getWorkspaceByKey(String workspaceKey) {
-		return workspacesMap.get(workspaceKey);
+	public Workspace getWorkspaceById(String workspaceId) throws LimooException {
+        if (workspacesMap.containsKey(workspaceId))
+            return workspacesMap.get(workspaceId);
+
+        JsonNode workspaceNode = requester.executeApiGet(GET_WORKSPACE_URI_TEMPLATE, null);
+        try {
+            Workspace workspace = new Workspace(requester);
+            JacksonUtils.deserializeIntoObject(workspaceNode, workspace);
+            workspacesMap.put(workspace.getKey(), workspace);
+            websocketEndpoints.add(new LimooWebsocketEndpoint(workspace, limooEventListenerManager, this));
+            return workspace;
+        } catch (IOException e) {
+            throw new LimooException(e);
+        }
 	}
 
-	private Workspace addWorkspace(String workspaceId) throws LimooException {
-		Workspace existingWorkspace = workspacesMap.values().stream()
-				.filter(w -> w.getId().equals(workspaceId))
-				.findAny().orElse(null);
-		if (existingWorkspace != null)
-			return null;
-
-		JsonNode workspaceNode = requester.executeApiGet(GET_WORKSPACE_URI_TEMPLATE, null);
-		try {
-			Workspace workspace = new Workspace(requester);
-			JacksonUtils.deserializeIntoObject(workspaceNode, workspace);
-			workspacesMap.put(workspace.getKey(), workspace);
-            websocketEndpoints.add(new LimooWebsocketEndpoint(workspace, limooEventListenerManager));
-			return workspace;
-		} catch (IOException e) {
-			throw new LimooException(e);
-		}
+	public Workspace getWorkspaceByKey(String workspaceKey) {
+		return workspacesMap.values().stream()
+                .filter(w -> w.getKey().equals(workspaceKey))
+                .findAny().orElse(null);
 	}
 
 	@Override
