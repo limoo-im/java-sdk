@@ -31,16 +31,14 @@ public class LimooDriver implements Closeable {
 
 	private final LimooEventListenerManager limooEventListenerManager;
 	private final LimooRequester requester;
-	private final Map<String, Workspace> workspacesMap;
-	private final Map<String, LimooWebsocketEndpoint> websocketEndpointsMap;
+	private final Map<String, Workspace> workspacesMap = new HashMap<>();
+	private final List<LimooWebsocketEndpoint> websocketEndpoints = new ArrayList<>();
 	private Bot bot;
 
 	public LimooDriver(String limooUrl, String botUsername, String botPassword) throws LimooException {
 		limooEventListenerManager = new LimooEventListenerManager();
 		requester = new LimooRequester(limooUrl, botUsername, botPassword);
 		getAndInitBot();
-		workspacesMap = new HashMap<>();
-		websocketEndpointsMap = new HashMap<>();
 		try {
 			getAndInitWorkspaces();
 		} catch (Exception e) {
@@ -70,8 +68,7 @@ public class LimooDriver implements Closeable {
 				Workspace workspace = new Workspace(requester);
 				JacksonUtils.deserializeIntoObject(workspaceNode, workspace);
 				workspacesMap.put(workspace.getKey(), workspace);
-                websocketEndpointsMap.put(workspace.getWorker().getWebsocketUrl(),
-                        new LimooWebsocketEndpoint(workspace, limooEventListenerManager));
+                websocketEndpoints.add(new LimooWebsocketEndpoint(workspace, limooEventListenerManager));
 			}
 		} catch (IOException e) {
 			throw new LimooException("An error occurred while getting bot's workspaces.");
@@ -142,8 +139,7 @@ public class LimooDriver implements Closeable {
 			Workspace workspace = new Workspace(requester);
 			JacksonUtils.deserializeIntoObject(workspaceNode, workspace);
 			workspacesMap.put(workspace.getKey(), workspace);
-            websocketEndpointsMap.put(workspace.getWorker().getWebsocketUrl(),
-                    new LimooWebsocketEndpoint(workspace, limooEventListenerManager));
+            websocketEndpoints.add(new LimooWebsocketEndpoint(workspace, limooEventListenerManager));
 			return workspace;
 		} catch (IOException e) {
 			throw new LimooException(e);
@@ -152,7 +148,7 @@ public class LimooDriver implements Closeable {
 
 	@Override
 	public void close() {
-		for (LimooWebsocketEndpoint limooWebsocketEndpoint : websocketEndpointsMap.values()) {
+		for (LimooWebsocketEndpoint limooWebsocketEndpoint : websocketEndpoints) {
 			limooWebsocketEndpoint.close();
 		}
 	}
