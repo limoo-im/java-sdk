@@ -70,10 +70,8 @@ public class LimooDriver implements Closeable {
 				Workspace workspace = new Workspace(requester);
 				JacksonUtils.deserializeIntoObject(workspaceNode, workspace);
 				workspacesMap.put(workspace.getKey(), workspace);
-				String websocketUrl = workspace.getWorker().getWebsocketUrl();
-				if (!websocketEndpointsMap.containsKey(websocketUrl)) {
-					websocketEndpointsMap.put(websocketUrl, new LimooWebsocketEndpoint(workspace, limooEventListenerManager));
-				}
+                websocketEndpointsMap.put(workspace.getWorker().getWebsocketUrl(),
+                        new LimooWebsocketEndpoint(workspace, limooEventListenerManager));
 			}
 		} catch (IOException e) {
 			throw new LimooException("An error occurred while getting bot's workspaces.");
@@ -144,10 +142,8 @@ public class LimooDriver implements Closeable {
 			Workspace workspace = new Workspace(requester);
 			JacksonUtils.deserializeIntoObject(workspaceNode, workspace);
 			workspacesMap.put(workspace.getKey(), workspace);
-			String websocketUrl = workspace.getWorker().getWebsocketUrl();
-			if (!websocketEndpointsMap.containsKey(websocketUrl)) {
-				websocketEndpointsMap.put(websocketUrl, new LimooWebsocketEndpoint(workspace, limooEventListenerManager));
-			}
+            websocketEndpointsMap.put(workspace.getWorker().getWebsocketUrl(),
+                    new LimooWebsocketEndpoint(workspace, limooEventListenerManager));
 			return workspace;
 		} catch (IOException e) {
 			throw new LimooException(e);
