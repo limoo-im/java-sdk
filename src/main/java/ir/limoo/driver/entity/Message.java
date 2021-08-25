@@ -25,6 +25,7 @@ public class Message {
 	private String userId;
 
 	@JsonProperty("create_at")
+	@JsonInclude(Include.NON_NULL)
 	private Date createAt;
 
 	@JsonProperty("conversation_id")
