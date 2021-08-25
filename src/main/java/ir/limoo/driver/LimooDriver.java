@@ -32,7 +32,7 @@ public class LimooDriver implements Closeable {
 	private final LimooEventListenerManager limooEventListenerManager;
 	private final LimooRequester requester;
 	private final Map<String, Workspace> workspacesMap = new HashMap<>();
-    private final Map<String, LimooWebsocketEndpoint> websocketEndpointsMap = new HashMap<>();
+	private final Map<String, LimooWebsocketEndpoint> websocketEndpointsMap = new HashMap<>();
 	private Bot bot;
 
 	public LimooDriver(String limooUrl, String botUsername, String botPassword) throws LimooException {
@@ -68,11 +68,11 @@ public class LimooDriver implements Closeable {
 				Workspace workspace = new Workspace(requester);
 				JacksonUtils.deserializeIntoObject(workspaceNode, workspace);
 				workspacesMap.put(workspace.getId(), workspace);
-                String websocketUrl = workspace.getWorker().getWebsocketUrl();
-                if (!websocketEndpointsMap.containsKey(websocketUrl)) {
-                    websocketEndpointsMap.put(websocketUrl,
-                            new LimooWebsocketEndpoint(websocketUrl, limooEventListenerManager, this));
-                }
+				String websocketUrl = workspace.getWorker().getWebsocketUrl();
+				if (!websocketEndpointsMap.containsKey(websocketUrl)) {
+					websocketEndpointsMap.put(websocketUrl,
+							new LimooWebsocketEndpoint(websocketUrl, limooEventListenerManager, this));
+				}
 			}
 		} catch (IOException e) {
 			throw new LimooException("An error occurred while getting bot's workspaces.");
@@ -95,8 +95,8 @@ public class LimooDriver implements Closeable {
 				if (userId.equals(bot.getId())) {
 					try {
 						String workspaceId = dataNode.get("workspace_id").asText();
-                        if (!workspacesMap.containsKey(workspaceId)) {
-						    Workspace addedWorkspace = getWorkspaceById(workspaceId);
+						if (!workspacesMap.containsKey(workspaceId)) {
+							Workspace addedWorkspace = getWorkspaceById(workspaceId);
 							limooEventListenerManager.newEvent(new LimooEvent(
 									AddedToWorkspaceEventListener.ADDED_TO_WORKSPACE,
 									event.getEventData(),
@@ -119,11 +119,11 @@ public class LimooDriver implements Closeable {
 		this.limooEventListenerManager.removeFromListeners(listener);
 	}
 
-    public LimooRequester getRequester() {
-        return requester;
-    }
+	public LimooRequester getRequester() {
+		return requester;
+	}
 
-    public Bot getBot() {
+	public Bot getBot() {
 		return bot;
 	}
 
@@ -132,29 +132,29 @@ public class LimooDriver implements Closeable {
 	}
 
 	public Workspace getWorkspaceById(String workspaceId) throws LimooException {
-        if (workspacesMap.containsKey(workspaceId))
-            return workspacesMap.get(workspaceId);
+		if (workspacesMap.containsKey(workspaceId))
+			return workspacesMap.get(workspaceId);
 
-        JsonNode workspaceNode = requester.executeApiGet(GET_WORKSPACE_URI_TEMPLATE, null);
-        try {
-            Workspace workspace = new Workspace(requester);
-            JacksonUtils.deserializeIntoObject(workspaceNode, workspace);
-            workspacesMap.put(workspace.getKey(), workspace);
-            String websocketUrl = workspace.getWorker().getWebsocketUrl();
-            if (!websocketEndpointsMap.containsKey(websocketUrl)) {
-                websocketEndpointsMap.put(websocketUrl,
-                        new LimooWebsocketEndpoint(websocketUrl, limooEventListenerManager, this));
-            }
-            return workspace;
-        } catch (IOException e) {
-            throw new LimooException(e);
-        }
+		JsonNode workspaceNode = requester.executeApiGet(String.format(GET_WORKSPACE_URI_TEMPLATE, workspaceId), null);
+		try {
+			Workspace workspace = new Workspace(requester);
+			JacksonUtils.deserializeIntoObject(workspaceNode, workspace);
+			workspacesMap.put(workspace.getKey(), workspace);
+			String websocketUrl = workspace.getWorker().getWebsocketUrl();
+			if (!websocketEndpointsMap.containsKey(websocketUrl)) {
+				websocketEndpointsMap.put(websocketUrl,
+						new LimooWebsocketEndpoint(websocketUrl, limooEventListenerManager, this));
+			}
+			return workspace;
+		} catch (IOException e) {
+			throw new LimooException(e);
+		}
 	}
 
 	public Workspace getWorkspaceByKey(String workspaceKey) {
 		return workspacesMap.values().stream()
-                .filter(w -> w.getKey().equals(workspaceKey))
-                .findAny().orElse(null);
+				.filter(w -> w.getKey().equals(workspaceKey))
+				.findAny().orElse(null);
 	}
 
 	@Override

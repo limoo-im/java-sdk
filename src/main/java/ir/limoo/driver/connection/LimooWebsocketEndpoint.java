@@ -25,18 +25,18 @@ public class LimooWebsocketEndpoint implements Closeable {
 	private static final int MAX_INITIAL_CONNECTION_ATTEMPTS = 2;
 	private static final long DELAY_INCREASE_MILLIS = 2000;
 
-    private final LimooEventListenerManager limooEventListenerManager;
-    private final LimooDriver limooDriver;
-    private Socket socket;
+	private final LimooEventListenerManager limooEventListenerManager;
+	private final LimooDriver limooDriver;
+	private Socket socket;
 	private int consecutiveConnectionAttempts = 0;
 
 	@SuppressWarnings("rawtypes")
 	private RequestBuilder requestBuilder;
 
 	public LimooWebsocketEndpoint(String websocketUrl, LimooEventListenerManager limooEventListenerManager,
-                                  LimooDriver limooDriver) throws LimooException {
-        this.limooEventListenerManager = limooEventListenerManager;
-        this.limooDriver = limooDriver;
+								  LimooDriver limooDriver) throws LimooException {
+		this.limooEventListenerManager = limooEventListenerManager;
+		this.limooDriver = limooDriver;
 		this.createSocket(websocketUrl);
 		this.connect(true);
 	}
@@ -126,17 +126,17 @@ public class LimooWebsocketEndpoint implements Closeable {
 			logger.error("Received authentication_failed upon opening websocket");
 			close();
 		} else if (eventNode.has("data")) {
-            JsonNode dataNode = eventNode.get("data");
-            Workspace workspace = null;
-            if (dataNode.has("workspace_id")) {
-                String eventWorkspaceId = dataNode.get("workspace_id").asText();
-                try {
-                    workspace = limooDriver.getWorkspaceById(eventWorkspaceId);
-                } catch (LimooException e) {
-                    logger.error("", e);
-                }
-            }
-            limooEventListenerManager.newEvent(new LimooEvent(event, dataNode, workspace));
+			JsonNode dataNode = eventNode.get("data");
+			Workspace workspace = null;
+			if (dataNode.has("workspace_id")) {
+				String eventWorkspaceId = dataNode.get("workspace_id").asText();
+				try {
+					workspace = limooDriver.getWorkspaceById(eventWorkspaceId);
+				} catch (LimooException e) {
+					logger.error("", e);
+				}
+			}
+			limooEventListenerManager.newEvent(new LimooEvent(event, dataNode, workspace));
 		}
 	}
 
