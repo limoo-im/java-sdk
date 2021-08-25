@@ -25,7 +25,6 @@ public class LimooWebsocketEndpoint implements Closeable {
 	private static final int MAX_INITIAL_CONNECTION_ATTEMPTS = 2;
 	private static final long DELAY_INCREASE_MILLIS = 2000;
 
-    private final Workspace workspace;
     private final LimooEventListenerManager limooEventListenerManager;
     private final LimooDriver limooDriver;
     private Socket socket;
@@ -34,22 +33,21 @@ public class LimooWebsocketEndpoint implements Closeable {
 	@SuppressWarnings("rawtypes")
 	private RequestBuilder requestBuilder;
 
-	public LimooWebsocketEndpoint(Workspace workspace, LimooEventListenerManager limooEventListenerManager,
+	public LimooWebsocketEndpoint(String websocketUrl, LimooEventListenerManager limooEventListenerManager,
                                   LimooDriver limooDriver) throws LimooException {
-        this.workspace = workspace;
         this.limooEventListenerManager = limooEventListenerManager;
         this.limooDriver = limooDriver;
-		this.createSocket(workspace.getWorker());
+		this.createSocket(websocketUrl);
 		this.connect(true);
 	}
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
-	private void createSocket(WorkerNode worker) {
+	private void createSocket(String websocketUrl) {
 		Client client = ClientFactory.getDefault().newClient();
 
 		requestBuilder = client.newRequestBuilder()
 				.method(Request.METHOD.GET)
-				.uri(worker.getWebsocketUrl())
+				.uri(websocketUrl)
 				.transport(Request.TRANSPORT.WEBSOCKET)
 				.encoder(new Encoder<JsonNode, String>() {
 					@Override
@@ -114,7 +112,7 @@ public class LimooWebsocketEndpoint implements Closeable {
 	}
 
 	private void attemptToConnect() throws IOException, LimooException {
-		requestBuilder.header("Cookie", "ACCESSTOKEN=" + workspace.getRequester().getAccessToken());
+		requestBuilder.header("Cookie", "ACCESSTOKEN=" + limooDriver.getRequester().getAccessToken());
 		socket.open(requestBuilder.build());
 	}
 
@@ -129,16 +127,16 @@ public class LimooWebsocketEndpoint implements Closeable {
 			close();
 		} else if (eventNode.has("data")) {
             JsonNode dataNode = eventNode.get("data");
-            Workspace eventWorkspace = null;
+            Workspace workspace = null;
             if (dataNode.has("workspace_id")) {
                 String eventWorkspaceId = dataNode.get("workspace_id").asText();
                 try {
-                    eventWorkspace = limooDriver.getWorkspaceById(eventWorkspaceId);
+                    workspace = limooDriver.getWorkspaceById(eventWorkspaceId);
                 } catch (LimooException e) {
                     logger.error("", e);
                 }
             }
-            limooEventListenerManager.newEvent(new LimooEvent(event, dataNode, eventWorkspace));
+            limooEventListenerManager.newEvent(new LimooEvent(event, dataNode, workspace));
 		}
 	}
 
