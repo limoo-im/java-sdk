@@ -45,7 +45,7 @@ public class Message {
 	private String directReplyMessageId;
 
 	private List<File> files;
-	private String workspaceId;
+	private String workspaceKey;
 	private Workspace workspace;
 
 	public Message() {
@@ -54,7 +54,7 @@ public class Message {
 	public Message(Workspace workspace) {
 		this.workspace = workspace;
 		if (workspace != null)
-			this.workspaceId = workspace.getId();
+			this.workspaceKey = workspace.getKey();
 	}
 
 	public String getId() {
@@ -155,7 +155,7 @@ public class Message {
 	public void setWorkspace(Workspace workspace) {
 		this.workspace = workspace;
 		if (workspace != null)
-			this.workspaceId = workspace.getId();
+			this.workspaceKey = workspace.getKey();
 		if (fileInfos != null) {
 			for (MessageFile file : fileInfos) {
 				file.setWorkspace(workspace);
@@ -163,12 +163,12 @@ public class Message {
 		}
 	}
 
-	public String getWorkspaceId() {
-		return workspaceId;
+	public String getWorkspaceKey() {
+		return workspaceKey;
 	}
 
-	public void setWorkspaceId(String workspaceId) {
-		this.workspaceId = workspaceId;
+	public void setWorkspaceKey(String workspaceKey) {
+		this.workspaceKey = workspaceKey;
 	}
 
 	public Message sendInThread(String text) throws LimooException {
