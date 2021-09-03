@@ -123,6 +123,16 @@ public class LimooRequester {
 		}
 	}
 
+    public JsonNode executeApiDelete(String relativeUrl, WorkerNode worker) throws LimooException {
+        Request request = new Request.Builder().url(createApiUrl(relativeUrl, worker)).delete().build();
+        try {
+            return executeRequestAndGetBody(request);
+        } catch (LimooAuthenticationException e) {
+            login();
+            return executeRequestAndGetBody(request);
+        }
+    }
+
 	private JsonNode executeRequestAndGetBody(Request request) throws LimooException {
 		try (Response response = executeRequest(request)) {
 			return JacksonUtils.convertStringToJsonNode(response.body().string());
