@@ -49,23 +49,39 @@ public class LimooWebsocketEndpoint implements Closeable {
 				.method(Request.METHOD.GET)
 				.uri(websocketUrl)
 				.transport(Request.TRANSPORT.WEBSOCKET)
-				.encoder((Encoder<JsonNode, String>) JacksonUtils::serializeObjectAsString)
-				.decoder((Decoder<String, JsonNode>) (e, s) -> {
-                    try {
-                        return JacksonUtils.convertStringToJsonNode(s);
-                    } catch (IOException e1) {
-                        return JacksonUtils.createEmptyObjectNode();
-                    }
-                }).transport(Request.TRANSPORT.WEBSOCKET);
+				.encoder(new Encoder<JsonNode, String>() {
+					@Override
+					public String encode(JsonNode jsonNode) {
+						return JacksonUtils.serializeObjectAsString(jsonNode);
+					}
+				})
+				.decoder(new Decoder<String, JsonNode>() {
+					@Override
+					public JsonNode decode(Event e, String s) {
+						try {
+							return JacksonUtils.convertStringToJsonNode(s);
+						} catch (IOException e1) {
+							return JacksonUtils.createEmptyObjectNode();
+						}
+					}
+				}).transport(Request.TRANSPORT.WEBSOCKET);
 
 		Options options = client.newOptionsBuilder().reconnect(false).build();
 		socket = client.create(options);
-		socket.on((Function<JsonNode>) jsonNode -> {
-            if (jsonNode.get("event") != null) {
-                String event = jsonNode.get("event").asText();
-                handleEvent(event, jsonNode);
-            }
-        }).on(Event.CLOSE, t -> reconnect());
+		socket.on(new Function<JsonNode>() {
+			@Override
+			public void on(JsonNode jsonNode) {
+				if (jsonNode.get("event") != null) {
+					String event = jsonNode.get("event").asText();
+					handleEvent(event, jsonNode);
+				}
+			}
+		}).on(Event.CLOSE, new Function<String>() {
+			@Override
+			public void on(String t) {
+                reconnect();
+			}
+		});
 	}
 
     private void reconnect() {
