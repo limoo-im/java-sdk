@@ -14,7 +14,7 @@ import java.util.List;
 
 public class JacksonUtils {
 
-	private static final transient Logger logger = LoggerFactory.getLogger(JacksonUtils.class);
+	private static final Logger logger = LoggerFactory.getLogger(JacksonUtils.class);
 
 	private static ObjectMapper objectMapper = null;
 	private static ObjectMapper forgivingObjectMapper = null;

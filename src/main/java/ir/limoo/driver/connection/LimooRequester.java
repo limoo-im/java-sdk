@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 
 public class LimooRequester {
 
-	private static final transient org.slf4j.Logger logger = LoggerFactory.getLogger(LimooRequester.class);
+	private static final org.slf4j.Logger logger = LoggerFactory.getLogger(LimooRequester.class);
 
 	private static final String LOGIN_URI = "j_spring_security_check";
 	private static final String REFRESH_TOKEN_URI = "j_spring_jwt_security_check";

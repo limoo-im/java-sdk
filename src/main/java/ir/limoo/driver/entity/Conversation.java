@@ -17,7 +17,7 @@ import java.util.List;
 
 public class Conversation {
 
-	private static final transient Logger logger = LoggerFactory.getLogger(Conversation.class);
+	private static final Logger logger = LoggerFactory.getLogger(Conversation.class);
 
 	private static final String GET_MESSAGES_URI_TEMPLATE = "workspace/items/%s/conversation/items/%s/message/items?since=%d";
 	private static final String VIEW_CONVERSATION_URI_TEMPLATE = "workspace/items/%s/conversation/items/%s/view_log";

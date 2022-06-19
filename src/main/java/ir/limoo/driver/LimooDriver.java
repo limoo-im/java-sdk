@@ -22,7 +22,7 @@ import java.util.Map;
 
 public class LimooDriver implements Closeable {
 
-	private static final transient Logger logger = LoggerFactory.getLogger(LimooDriver.class);
+	private static final Logger logger = LoggerFactory.getLogger(LimooDriver.class);
 
 	private static final String GET_SELF_URI_TEMPLATE = "user/items/self";
 	private static final String GET_MY_WORKSPACES_URI_TEMPLATE = "user/my_workspaces";

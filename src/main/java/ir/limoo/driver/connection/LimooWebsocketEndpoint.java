@@ -18,7 +18,7 @@ import java.io.IOException;
 
 public class LimooWebsocketEndpoint implements Closeable {
 
-	private static final transient Logger logger = LoggerFactory.getLogger(LimooWebsocketEndpoint.class);
+	private static final Logger logger = LoggerFactory.getLogger(LimooWebsocketEndpoint.class);
 
 	private static final String AUTHENTICATION_FAILED_EVENT = "authentication_failed";
 	private static final int MAX_CONSECUTIVE_CONNECTION_ATTEMPTS = 1000000;
@@ -49,45 +49,34 @@ public class LimooWebsocketEndpoint implements Closeable {
 				.method(Request.METHOD.GET)
 				.uri(websocketUrl)
 				.transport(Request.TRANSPORT.WEBSOCKET)
-				.encoder(new Encoder<JsonNode, String>() {
-					@Override
-					public String encode(JsonNode jsonNode) {
-						return JacksonUtils.serializeObjectAsString(jsonNode);
-					}
-				})
-				.decoder(new Decoder<String, JsonNode>() {
-					@Override
-					public JsonNode decode(Event e, String s) {
-						try {
-							return JacksonUtils.convertStringToJsonNode(s);
-						} catch (IOException e1) {
-							return JacksonUtils.createEmptyObjectNode();
-						}
-					}
-				}).transport(Request.TRANSPORT.WEBSOCKET);
+				.encoder((Encoder<JsonNode, String>) JacksonUtils::serializeObjectAsString)
+				.decoder((Decoder<String, JsonNode>) (e, s) -> {
+                    try {
+                        return JacksonUtils.convertStringToJsonNode(s);
+                    } catch (IOException e1) {
+                        return JacksonUtils.createEmptyObjectNode();
+                    }
+                }).transport(Request.TRANSPORT.WEBSOCKET);
 
 		Options options = client.newOptionsBuilder().reconnect(false).build();
 		socket = client.create(options);
-		socket.on(new Function<JsonNode>() {
-			@Override
-			public void on(JsonNode jsonNode) {
-				if (jsonNode.get("event") != null) {
-					String event = jsonNode.get("event").asText();
-					handleEvent(event, jsonNode);
-				}
-			}
-		}).on(Event.CLOSE, new Function<String>() {
-			@Override
-			public void on(String t) {
-				close();
-				try {
-					connect(false);
-				} catch (LimooException e) {
-					logger.error("", e);
-				}
-			}
-		});
+		socket.on((Function<JsonNode>) jsonNode -> {
+            if (jsonNode.get("event") != null) {
+                String event = jsonNode.get("event").asText();
+                handleEvent(event, jsonNode);
+            }
+        }).on(Event.CLOSE, t -> reconnect());
 	}
+
+    private void reconnect() {
+        close();
+        try {
+            connect(false);
+        } catch (LimooException e) {
+            logger.error("", e);
+            System.exit(1);
+        }
+    }
 
 	private void connect(boolean isInitialConnection) throws LimooException {
 		while (true) {
@@ -124,7 +113,7 @@ public class LimooWebsocketEndpoint implements Closeable {
 		if (AUTHENTICATION_FAILED_EVENT.equals(event)) {
 			// This normally shouldn't happen
 			logger.error("Received authentication_failed upon opening websocket");
-			close();
+            reconnect();
 		} else if (eventNode.has("data")) {
 			JsonNode dataNode = eventNode.get("data");
 			Workspace workspace = null;

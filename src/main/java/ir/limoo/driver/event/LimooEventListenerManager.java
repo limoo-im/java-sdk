@@ -9,7 +9,7 @@ import java.util.List;
 
 public class LimooEventListenerManager {
 
-	private static final transient Logger logger = LoggerFactory.getLogger(LimooEventListenerManager.class);
+	private static final Logger logger = LoggerFactory.getLogger(LimooEventListenerManager.class);
 
 	private final List<LimooEventListener> listeners;
 
