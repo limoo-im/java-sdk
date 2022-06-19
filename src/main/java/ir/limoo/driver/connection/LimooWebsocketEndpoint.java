@@ -1,8 +1,8 @@
 package ir.limoo.driver.connection;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import ir.limoo.driver.LimooDriver;
-import ir.limoo.driver.entity.WorkerNode;
 import ir.limoo.driver.entity.Workspace;
 import ir.limoo.driver.event.LimooEvent;
 import ir.limoo.driver.event.LimooEventListenerManager;
@@ -129,12 +129,24 @@ public class LimooWebsocketEndpoint implements Closeable {
 			JsonNode dataNode = eventNode.get("data");
 			Workspace workspace = null;
 			if (dataNode.has("workspace_id")) {
-				String eventWorkspaceId = dataNode.get("workspace_id").asText();
-				try {
-					workspace = limooDriver.getWorkspaceById(eventWorkspaceId);
-				} catch (LimooException e) {
-					logger.error("", e);
-				}
+                JsonNode workspaceIdNode = dataNode.get("workspace_id");
+                if (workspaceIdNode != null && !workspaceIdNode.isNull()) {
+                    if (workspaceIdNode instanceof ArrayNode) {
+                        for (JsonNode idNode : workspaceIdNode) {
+                            try {
+                                workspace = limooDriver.getWorkspaceById(idNode.asText());
+                            } catch (LimooException e) {
+                                logger.error("", e);
+                            }
+                        }
+                    } else {
+                        try {
+                            workspace = limooDriver.getWorkspaceById(workspaceIdNode.asText());
+                        } catch (LimooException e) {
+                            logger.error("", e);
+                        }
+                    }
+                }
 			}
 			limooEventListenerManager.newEvent(new LimooEvent(event, dataNode, workspace));
 		}
