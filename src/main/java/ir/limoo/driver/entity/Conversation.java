@@ -31,6 +31,9 @@ public class Conversation {
 	@JsonProperty("id")
 	private String id;
 
+    @JsonProperty("display_name")
+    private String displayName;
+
 	private ConversationType conversationType;
 	private Workspace workspace;
 
@@ -70,6 +73,14 @@ public class Conversation {
 	public void setTotalMsgCount(long totalMsgCount) {
 		this.totalMsgCount = totalMsgCount;
 	}
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
 
 	public ConversationType getConversationType() {
 		return conversationType;
@@ -127,14 +138,14 @@ public class Conversation {
 				Date lastViewedAt = new Date();
 				if (lastViewedAtTimes.has(id))
 					lastViewedAt = new Date(lastViewedAtTimes.get(id).asLong());
-				membership.manualView(lastViewedAt);
+				membership.manualView(lastViewedAt, getTotalMsgCount());
 			}
 		} catch (LimooException e) {
 			logger.error("", e);
 		}
 	}
 
-	public class Membership {
+	public static class Membership {
 		@JsonProperty("last_viewed_at")
 		private Date lastViewedAt;
 
@@ -168,10 +179,10 @@ public class Conversation {
 			this.mentionCount = mentionCount;
 		}
 
-		public void manualView(Date lastViewedAt) {
+		public void manualView(Date lastViewedAt, long totalMsgCount) {
 			this.lastViewedAt = lastViewedAt;
 			this.mentionCount = 0;
-			this.readMsgCount = getTotalMsgCount();
+			this.readMsgCount = totalMsgCount;
 		}
 	}
 }

@@ -53,6 +53,10 @@ public class User {
 		return isBot;
 	}
 
+    public boolean isBot() {
+        return getBot() != null && getBot();
+    }
+
 	public String getDisplayName() {
 		if (nickname != null && !nickname.isEmpty())
 			return nickname;
