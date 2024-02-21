@@ -8,21 +8,24 @@ This SDK is assumed to be used with Java version 8. It might be incompatible wit
 *Give Limoo a try: https://web.limoo.im*
 
 ### Dependencies
-com.squareup.okhttp3:okhttp:3.14.4  
-com.squareup.okhttp3:okhttp-urlconnection:3.14.4  
-com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.2.3  
-com.fasterxml.jackson.core:jackson-databind:2.9.10  
-log4j:log4j:1.2.16  
-org.slf4j:slf4j-log4j12:1.6.1  
-org.atmosphere:wasync:1.4.3  
+com.squareup.okhttp3:okhttp:4.9.1  
+com.squareup.okhttp3:okhttp-urlconnection:4.9.1  
+com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.12.4  
+com.fasterxml.jackson.core:jackson-databind:2.12.4  
+log4j:log4j:1.2.17  
+org.slf4j:slf4j-log4j12:1.7.31  
+org.atmosphere:wasync:2.1.7  
 
 ### Example usage
 ```java
 // Create a new LimooDriver instance by limoo server, workspace key, bot username and bot password
-LimooDriver ld = new LimooDriver("https://web.limoo.im/Limonad", "test", "test_bot_username", "test_bot_password");
+LimooDriver ld = new LimooDriver("https://web.limoo.im/Limonad", "test_bot_username", "test_bot_password");
+
+// Get a workspace by its key
+Workspace w = ld.getWorkspaceByKey("test");
 
 // Get a conversation by its id
-Conversation c = ld.getConversationById("conversationExtuid");
+Conversation c = w.getConversationById("conversationExtuid");
 
 // Get a list of new messages in the conversation (messages which have not been viewed by the bot)
 List<Message> unreadMessages = c.getUnreadMessages();
@@ -34,17 +37,17 @@ c.send("Hi everyone!");
 c.send(new Message.Builder().text("Here's a file!").file(new File("test.txt")));
 
 // Get all bot conversations
-List<Conversation> conversations = ld.getConversations();
+List<Conversation> conversations = w.getConversations();
 
 // Register a new MessageCreatedEventListener which notifies you whenever a new message is sent in the conversation
-ld.registerEventListener(new MessageCreatedEventListener(c) {
+ld.addEventListener(new MessageCreatedEventListener() {
 	@Override
-	public void onNewMessage(Message msg) {
+	public void onNewMessage(Message msg, Conversation c) {
 		System.out.println(msg.getText());
-
+		
 		// Download attachments of the message
-		if (msg.getFiles() != null) {
-			for (MessageFile messageFile : msg.getFiles()) {
+		if (msg.getFileInfos() != null) {
+			for (MessageFile messageFile : msg.getFileInfos()) {
 				try (InputStream inputStream = messageFile.download()) {
 					System.out.println(inputStream.available());
 				} catch (IOException e) {
@@ -57,7 +60,11 @@ ld.registerEventListener(new MessageCreatedEventListener(c) {
 
 		// Send a message in the thread of the new message (msg can be root of a thread only if its threadRootId is null)
 		if (msg.getThreadRootId() == null) {
-			c.send(new Message.Builder().text("Message received").threadRootId(msg.getId()));
+			try {
+				c.send(new Message.Builder().text("Message received").threadRootId(msg.getId()));
+			} catch (LimooException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 });

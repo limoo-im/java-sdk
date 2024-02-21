@@ -1,13 +1,15 @@
 package ir.limoo.driver.entity;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import ir.limoo.driver.exception.LimooException;
+import ir.limoo.driver.util.MessageUtils;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Message {
 
@@ -16,13 +18,14 @@ public class Message {
 	private String id;
 
 	@JsonProperty("text")
-	private String text;
+	private String text = "";
 
 	@JsonProperty("user_id")
 	@JsonInclude(Include.NON_NULL)
 	private String userId;
 
 	@JsonProperty("create_at")
+	@JsonInclude(Include.NON_NULL)
 	private Date createAt;
 
 	@JsonProperty("conversation_id")
@@ -34,18 +37,24 @@ public class Message {
 	private String threadRootId;
 
 	@JsonProperty("files")
+	@JsonInclude(Include.NON_NULL)
 	private List<MessageFile> fileInfos;
 
-	private List<File> files;
+	@JsonProperty("direct_reply_message_id")
+	@JsonInclude(Include.NON_NULL)
+	private String directReplyMessageId;
 
+	private List<File> files;
+	private String workspaceKey;
 	private Workspace workspace;
 
-	@Deprecated
-	private Message() {
+	public Message() {
 	}
 
 	public Message(Workspace workspace) {
 		this.workspace = workspace;
+		if (workspace != null)
+			this.workspaceKey = workspace.getKey();
 	}
 
 	public String getId() {
@@ -54,15 +63,6 @@ public class Message {
 
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public void setWorkspace(Workspace workspace) {
-		this.workspace = workspace;
-		if (fileInfos != null) {
-			for (MessageFile file : fileInfos) {
-				file.setWorkspace(workspace);
-			}
-		}
 	}
 
 	public String getText() {
@@ -111,7 +111,7 @@ public class Message {
 		return this.fileInfos;
 	}
 
-	public List<MessageFile> getFiles() {
+	public List<MessageFile> getFileInfos() {
 		return fileInfos;
 	}
 
@@ -124,6 +124,14 @@ public class Message {
 		}
 	}
 
+	public String getDirectReplyMessageId() {
+		return directReplyMessageId;
+	}
+
+	public void setDirectReplyMessageId(String directReplyMessageId) {
+		this.directReplyMessageId = directReplyMessageId;
+	}
+
 	public List<File> getUploadableFiles() {
 		return files;
 	}
@@ -132,6 +140,47 @@ public class Message {
 		if (this.files == null)
 			this.files = new ArrayList<>();
 		this.files.add(file);
+	}
+
+	public void addFiles(List<File> files) {
+		if (this.files == null)
+			this.files = new ArrayList<>();
+		this.files.addAll(files);
+	}
+
+	public Workspace getWorkspace() {
+		return workspace;
+	}
+
+	public void setWorkspace(Workspace workspace) {
+		this.workspace = workspace;
+		if (workspace != null)
+			this.workspaceKey = workspace.getKey();
+		if (fileInfos != null) {
+			for (MessageFile file : fileInfos) {
+				file.setWorkspace(workspace);
+			}
+		}
+	}
+
+	public String getWorkspaceKey() {
+		return workspaceKey;
+	}
+
+	public void setWorkspaceKey(String workspaceKey) {
+		this.workspaceKey = workspaceKey;
+	}
+
+	public Message sendInThread(String text) throws LimooException {
+		String threadId = threadRootId == null ? id : threadRootId;
+		Message.Builder messageBuilder = new Message.Builder().text(text).threadRootId(threadId);
+		return MessageUtils.sendMessage(messageBuilder, workspace, conversationId);
+	}
+
+	public Message sendInThread(Message.Builder messageBuilder) throws LimooException {
+		String threadId = threadRootId == null ? id : threadRootId;
+		messageBuilder.threadRootId(threadId);
+		return MessageUtils.sendMessage(messageBuilder, workspace, conversationId);
 	}
 
 	public static class Builder {
@@ -155,13 +204,23 @@ public class Message {
 			return this;
 		}
 
+		public Builder fileInfo(MessageFile fileInfo) {
+			message.getCreatedFileInfos().add(fileInfo);
+			return this;
+		}
+
+		public Builder fileInfos(List<MessageFile> fileInfos) {
+			message.getCreatedFileInfos().addAll(fileInfos);
+			return this;
+		}
+
 		public Builder file(File file) {
 			message.addFile(file);
 			return this;
 		}
 
-		public Builder workspace(Workspace workspace) {
-			message.workspace = workspace;
+		public Builder files(List<File> files) {
+			message.addFiles(files);
 			return this;
 		}
 	}

@@ -5,7 +5,6 @@ public class LimooFileUploadException extends LimooException {
 	private static final long serialVersionUID = 1L;
 
 	public LimooFileUploadException() {
-
 	}
 
 	public LimooFileUploadException(String str) {

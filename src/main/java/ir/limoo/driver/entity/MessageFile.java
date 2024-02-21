@@ -1,10 +1,9 @@
 package ir.limoo.driver.entity;
 
-import java.io.InputStream;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import ir.limoo.driver.exception.LimooException;
+
+import java.io.InputStream;
 
 public class MessageFile {
 	@JsonProperty("hash")
@@ -12,9 +11,6 @@ public class MessageFile {
 
 	@JsonProperty("name")
 	private String name;
-
-	@JsonProperty("mime_type")
-	private String mimeType;
 
 	@JsonProperty("size")
 	private long size;
@@ -37,20 +33,16 @@ public class MessageFile {
 		this.name = name;
 	}
 
-	public String getMimeType() {
-		return mimeType;
-	}
-
-	public void setMimeType(String mimeType) {
-		this.mimeType = mimeType;
-	}
-
 	public long getSize() {
 		return size;
 	}
 
 	public void setSize(long size) {
 		this.size = size;
+	}
+
+	public Workspace getWorkspace() {
+		return workspace;
 	}
 
 	public void setWorkspace(Workspace workspace) {

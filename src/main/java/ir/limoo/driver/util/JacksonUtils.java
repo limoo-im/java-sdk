@@ -1,21 +1,23 @@
 package ir.limoo.driver.util;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class JacksonUtils {
 
+	private static final Logger logger = LoggerFactory.getLogger(JacksonUtils.class);
+
 	private static ObjectMapper objectMapper = null;
+	private static ObjectMapper forgivingObjectMapper = null;
 
 	public static ObjectMapper getObjectMapper() {
 		if (objectMapper == null) {
@@ -27,8 +29,6 @@ public class JacksonUtils {
 		}
 		return objectMapper;
 	}
-
-	private static ObjectMapper forgivingObjectMapper = null;
 
 	public static ObjectMapper getForgivingObjectMapper() {
 		if (forgivingObjectMapper == null) {
@@ -50,16 +50,16 @@ public class JacksonUtils {
 		return getObjectMapper().readTree(objectNodeStr);
 	}
 
-	public static <T> T deserilizeObject(JsonNode jsonNode, Class<T> clazz) throws JsonProcessingException {
+	public static <T> T deserializeObject(JsonNode jsonNode, Class<T> clazz) throws JsonProcessingException {
 		return getForgivingObjectMapper().treeToValue(jsonNode, clazz);
 	}
 
-	public static void deserilizeIntoObject(JsonNode jsonNode, Object obj) throws IOException {
+	public static void deserializeIntoObject(JsonNode jsonNode, Object obj) throws IOException {
 		getForgivingObjectMapper().readerForUpdating(obj).readValue(jsonNode);
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T> List<T> deserilizeObjectToList(JsonNode jsonNode, Class<T> clazz) {
+	public static <T> List<T> deserializeObjectToList(JsonNode jsonNode, Class<T> clazz) {
 		List<T> output = new ArrayList<>();
 		if (jsonNode == null)
 			return output;
@@ -67,12 +67,10 @@ public class JacksonUtils {
 		try (JsonParser jsonParser = mapper.treeAsTokens(jsonNode)) {
 			Class<?> arrayClazz = Class.forName("[L" + clazz.getName() + ";");
 			T[] readValue = (T[]) mapper.readValue(jsonParser, arrayClazz);
-			for (T t : readValue) {
-				output.add(t);
-			}
+			Collections.addAll(output, readValue);
 			return output;
 		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
+			logger.error("", e);
 			return null;
 		}
 	}

@@ -9,3 +9,9 @@ build
 bin/
 .settings/
 
+.idea
+.cache
+*.iml
+out
+.vscode
+.settings
